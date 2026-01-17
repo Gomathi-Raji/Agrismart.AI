@@ -31,6 +31,7 @@ import {
 import { fetchWeatherApi } from 'openmeteo';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { config } from '@/lib/config';
 
 // Add custom styles for map popups
 const customPopupStyles = `
@@ -163,7 +164,7 @@ if (typeof document !== 'undefined') {
 }
 
 // Constants
-const MAPBOX_API_KEY = 'pk.eyJ1IjoiaGFyaXNod2FyYW4iLCJhIjoiY21hZHhwZGs2MDF4YzJxczh2aDd0cWg1MyJ9.qcu0lpqVlZlC2WFxhwb1Pg';
+const MAPBOX_API_KEY = config.MAPBOX_API_KEY;
 const CHENNAI_CENTER = { lat: 13.0827, lng: 80.2707 };
 
 // Custom mock locations - Chennai, Thiruvallur, Kanchipuram area

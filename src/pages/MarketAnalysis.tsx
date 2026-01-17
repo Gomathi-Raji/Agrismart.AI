@@ -589,46 +589,6 @@ export default function MarketAnalysis() {
               className="overflow-hidden"
             />
             
-            {/* Chennai Market Recommendations when data is limited */}
-            {filteredData.length < 10 && filters.state === 'Tamil Nadu' && !isLoading && (
-              <Card className="mt-4 border-amber-200 bg-amber-50">
-                <CardHeader>
-                  <CardTitle className="text-amber-800 flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    Chennai Area Market Guide
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <p className="text-amber-700 text-sm">
-                      Limited data available? Chennai users can access these priority markets:
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="bg-white p-3 rounded-lg border">
-                        <h4 className="font-medium text-amber-800">🥬 Koyambedu Market Complex</h4>
-                        <p className="text-xs text-amber-600 mt-1">Asia's largest perishable goods market</p>
-                        <p className="text-xs">Contact: Local traders • Live prices via market bulletins</p>
-                      </div>
-                      <div className="bg-white p-3 rounded-lg border">
-                        <h4 className="font-medium text-amber-800">🌾 Chengalpattu Uzhavar Sandhai</h4>
-                        <p className="text-xs text-amber-600 mt-1">Government registered • 45km from Chennai</p>
-                        <p className="text-xs">Available in this system • Real-time pricing</p>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setFilters({ state: 'Tamil Nadu', district: 'Chengalpattu' });
-                      }}
-                      className="bg-white border-amber-300 text-amber-700 hover:bg-amber-100"
-                    >
-                      View Chengalpattu Markets
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
 
           <TabsContent value="charts" className="mt-4">

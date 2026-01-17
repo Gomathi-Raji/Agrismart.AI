@@ -157,10 +157,16 @@ export default function Recommendations() {
       return;
     }
 
-    if (!geminiApiKey) {
+    // Check if API key is configured properly (not empty and not a placeholder)
+    const isApiKeyConfigured = geminiApiKey && 
+      geminiApiKey.trim() !== '' && 
+      !geminiApiKey.includes('YOUR_') && 
+      !geminiApiKey.includes('_HERE');
+    
+    if (!isApiKeyConfigured) {
       toast({
-        title: "API key missing",
-        description: "Gemini API key is required",
+        title: "⚠️ API Key Missing",
+        description: "Please add your Gemini API key to the .env file (VITE_GEMINI_API_KEY) to get recommendations.",
         variant: "destructive",
       });
       return;

@@ -60,10 +60,10 @@ interface GeminiMessagePart {
 declare global {
   interface Window {
     webkitSpeechRecognition: new () => SpeechRecognition;
-    testGeminiAPI?: () => Promise<void>;
+    testGeminiAPI?: () => Promise<unknown>;
     testVoices?: () => void;
     testVoice?: (text?: string, voiceIndex?: number) => void;
-    testFileUpload?: () => Promise<void>;
+    testFileUpload?: () => Promise<unknown>;
   }
 }
 
@@ -199,7 +199,7 @@ export default function Chatbot() {
   const [languageChanging, setLanguageChanging] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const controllerRef = useRef<AbortController | null>(null);
-  const recognitionRef = useRef<WebkitSpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -592,14 +592,24 @@ export default function Chatbot() {
       return;
     }
 
-    // Check if API key is loaded
-    if (!geminiApiKey) {
-      console.error('❌ Gemini API key not loaded');
+    // Check if API key is loaded and not a placeholder
+    const isApiKeyConfigured = geminiApiKey && 
+      geminiApiKey.trim() !== '' && 
+      !geminiApiKey.includes('YOUR_') && 
+      !geminiApiKey.includes('_HERE');
+    
+    if (!isApiKeyConfigured) {
+      console.error('❌ Gemini API key not configured properly');
+      toast({
+        title: "⚠️ API Key Missing",
+        description: "Please add your Gemini API key to the .env file (VITE_GEMINI_API_KEY) to use the chatbot.",
+        variant: "destructive"
+      });
       return;
     }
 
-    const userMsg = text.trim() || (currentFiles.length > 0 ? "Please analyze the uploaded file(s) and provide detailed insights about plant health, diseases, or agricultural information." : "");
     const currentFiles = [...uploadedFiles];
+    const userMsg = text.trim() || (currentFiles.length > 0 ? "Please analyze the uploaded file(s) and provide detailed insights about plant health, diseases, or agricultural information." : "");
     
     console.log('✅ Starting sendToGemini with:', { userMsg, fileCount: currentFiles.length, apiKey: geminiApiKey.slice(0, 10) + '...' });
     

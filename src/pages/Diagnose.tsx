@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 import { 
   Camera, Upload, Scan, AlertCircle, CheckCircle, 
   Award, Share2, Bookmark, ShoppingCart, Star, 
@@ -144,7 +145,12 @@ export default function Diagnose() {
   const [visibleSymptoms, setVisibleSymptoms] = useState('');
   const [environmentalFactors, setEnvironmentalFactors] = useState('');
 
+  // Support both Gemini and OpenRouter APIs
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+  const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+  const isGeminiConfigured = GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE';
+  const isOpenRouterConfigured = OPENROUTER_API_KEY && OPENROUTER_API_KEY !== 'YOUR_OPENROUTER_API_KEY_HERE';
+  const isApiConfigured = isGeminiConfigured || isOpenRouterConfigured;
 
   const productRecommendations = [
     {
@@ -279,18 +285,9 @@ export default function Diagnose() {
     });
   };
 
-  const analyzeImageWithGemini = async (imageBase64: string, metadata?: AnalysisMetadata) => {
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: `As an expert agricultural AI specializing in plant disease diagnosis, analyze this plant/leaf image with the following context:
+  // Build the analysis prompt
+  const buildAnalysisPrompt = (metadata?: AnalysisMetadata) => {
+    return `As an expert agricultural AI specializing in plant disease diagnosis, analyze this plant/leaf image with the following context:
 
 **Context Information:**
 - Location: ${metadata?.location || 'Auto-detected location (Chennai fallback)'} (automatically detected)
@@ -312,21 +309,6 @@ ${metadata?.weather ? `
 - Cloud Cover: ${metadata.weather.current.cloudCover}%
 - Weather Condition: ${metadata.weather.current.weatherCode}
 - Location: ${metadata.weather.location.latitude}°N, ${metadata.weather.location.longitude}°E (Elevation: ${metadata.weather.location.elevation}m)` : ''}
-
-**Analysis Approach:**
-- Plant type and symptoms will be identified from the image analysis
-- Use air quality data to assess environmental stress factors on plant health
-- Provide comprehensive diagnosis based on visual analysis and environmental context
-
-**Few-Shot Examples:**
-
-Example 1 - Tomato with Late Blight:
-Input: Tomato plant in humid coastal area, dark spots on leaves, wet weather
-Expected: {"status": "diseased", "plantType": "Tomato (Solanum lycopersicum)", "confidence": 95, "disease": "Late Blight (Phytophthora infestans)", "severity": "severe", ...}
-
-Example 2 - Healthy Corn:
-Input: Corn plant in dry field, no visible issues, regular irrigation
-Expected: {"status": "healthy", "plantType": "Corn (Zea mays)", "confidence": 88, "disease": null, ...}
 
 **IMPORTANT: NATURAL & ORGANIC ONLY**
 We promote sustainable, chemical-free farming. ALL recommendations must be:
@@ -374,33 +356,118 @@ We promote sustainable, chemical-free farming. ALL recommendations must be:
   "additionalAdvice": "recommendations for sustainable organic practices"
 }
 
-Be detailed and practical. Focus on actionable NATURAL advice that farmers can implement without buying synthetic products. Emphasize traditional wisdom and sustainable practices.`
-              },
-              {
-                inline_data: {
-                  mime_type: "image/jpeg",
-                  data: imageBase64.split(',')[1]
-                }
+Be detailed and practical. Focus on actionable NATURAL advice that farmers can implement without buying synthetic products.`;
+  };
+
+  // Analyze image using OpenRouter API (supports vision models like Claude, GPT-4V)
+  const analyzeWithOpenRouter = async (imageBase64: string, metadata?: AnalysisMetadata) => {
+    const prompt = buildAnalysisPrompt(metadata);
+    
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'AgriSmart Plant Diagnosis'
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-001',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { 
+                type: 'image_url', 
+                image_url: { 
+                  url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+                } 
               }
             ]
-          }]
-        })
-      });
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7
+      })
+    });
 
-      const data = await response.json();
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('OpenRouter API error:', data.error);
+      throw new Error(data.error.message || 'OpenRouter API error');
+    }
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid OpenRouter response:', data);
+      throw new Error('Invalid response from OpenRouter API');
+    }
+    
+    return data.choices[0].message.content;
+  };
+
+  // Analyze image using Gemini API
+  const analyzeWithGemini = async (imageBase64: string, metadata?: AnalysisMetadata) => {
+    const prompt = buildAnalysisPrompt(metadata);
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: imageBase64.split(',')[1]
+              }
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      console.error('Invalid Gemini API response:', data);
       
-      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-        console.error('Invalid API response structure:', data);
-        
-        // Check for quota exceeded error
-        if (data.error && data.error.code === 429) {
-          throw new Error(`API Quota Exceeded: The Gemini API quota has been reached. Please try again later or contact support to increase your quota limits.`);
-        }
-        
-        throw new Error(`Invalid response from Gemini API: ${JSON.stringify(data)}`);
+      if (data.error && data.error.code === 429) {
+        throw new Error('API Quota Exceeded: Please try again later.');
       }
+      
+      throw new Error(`Invalid response from Gemini API: ${JSON.stringify(data)}`);
+    }
+    
+    return data.candidates[0].content.parts[0].text;
+  };
 
-      const analysisText = data.candidates[0].content.parts[0].text;
+  const analyzeImageWithGemini = async (imageBase64: string, metadata?: AnalysisMetadata) => {
+    // Check if any API key is configured
+    if (!isApiConfigured) {
+      toast({
+        title: "⚠️ API Key Missing",
+        description: "Please add VITE_OPENROUTER_API_KEY or VITE_GEMINI_API_KEY to the .env file",
+        variant: "destructive"
+      });
+      throw new Error('No API key configured.');
+    }
+
+    try {
+      let analysisText: string;
+      
+      // Prefer OpenRouter if configured, fallback to Gemini
+      if (isOpenRouterConfigured) {
+        console.log('🔄 Using OpenRouter API for analysis...');
+        analysisText = await analyzeWithOpenRouter(imageBase64, metadata);
+      } else {
+        console.log('🔄 Using Gemini API for analysis...');
+        analysisText = await analyzeWithGemini(imageBase64, metadata);
+      }
       
       // Clean up the response text (remove markdown formatting if present)
       const cleanedText = analysisText.replace(/```json\n?|\n?```/g, '').trim();
@@ -641,6 +708,15 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
     };
 
     const result = await analyzeImageWithGemini(enhancedImage, metadata);
+
+    // Show toast if API quota exceeded
+    if (result.status === 'error' && result.symptoms?.includes('API quota exceeded')) {
+      toast({
+        title: "⏳ API Quota Exceeded",
+        description: "Please wait a few minutes before trying again. The free tier has limited requests.",
+        variant: "destructive"
+      });
+    }
 
     setAnalysisResult(result);
     setIsAnalyzing(false);
@@ -958,7 +1034,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                 </h4>
                 <div className="aspect-video w-full max-w-2xl mx-auto rounded-lg overflow-hidden shadow-lg">
                   <iframe
-                    src="https://www.youtube.com/embed/gKrNI5PIMeM"
+                    src="https://www.youtube.com/embed/gKrNI5PIMeM?si=ctv1I2g9Xi27R8L1"
                     title="How to Use Plant Health Diagnosis - Demo"
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

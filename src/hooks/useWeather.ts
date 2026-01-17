@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getWeatherData, getCurrentLocation, WeatherData, LocationData } from '@/services/weatherService';
+import { config } from '@/lib/config';
 
 export const useWeather = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
@@ -25,9 +26,8 @@ export const useWeather = () => {
         } else {
           // Get address from coordinates using reverse geocoding for better accuracy
           try {
-            const MAPBOX_API_KEY = 'pk.eyJ1IjoiaGFyaXNod2FyYW4iLCJhIjoiY21hZHhwZGs2MDF4YzJxczh2aDd0cWg1MyJ9.qcu0lpqVlZlC2WFxhwb1Pg';
             const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_API_KEY}`
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${config.MAPBOX_API_KEY}`
             );
             const data = await response.json();
             const resolvedAddress = data.features?.[0]?.place_name || `${lat.toFixed(6)}°N, ${lng.toFixed(6)}°E`;

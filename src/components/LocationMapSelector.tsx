@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { MapPin, Search, Loader2, X } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { config } from '@/lib/config';
 
 interface LocationMapSelectorProps {
   onLocationSelect: (location: string) => void;
@@ -13,7 +14,7 @@ interface LocationMapSelectorProps {
   onClose: () => void;
 }
 
-const MAPBOX_API_KEY = 'pk.eyJ1IjoiaGFyaXNod2FyYW4iLCJhIjoiY21hZHhwZGs2MDF4YzJxczh2aDd0cWg1MyJ9.qcu0lpqVlZlC2WFxhwb1Pg';
+const MAPBOX_API_KEY = config.MAPBOX_API_KEY;
 
 export const LocationMapSelector: React.FC<LocationMapSelectorProps> = ({ 
   onLocationSelect, 
