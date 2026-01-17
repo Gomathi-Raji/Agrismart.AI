@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapbox Telemetry Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #059669;
+        }
+        .error {
+            color: #dc2626;
+        }
+        .info {
+            color: #0369a1;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        #console-output {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Mapbox Telemetry Blocking Test</h1>
+    
+    <div class="test-card">
+        <h2>Test Status</h2>
+        <div id="test-status">
+            <p class="info">Click the test buttons below to verify telemetry blocking...</p>
+        </div>
+    </div>
+    
+    <div class="test-card">
+        <h2>Manual Tests</h2>
+        <button onclick="testFetch()">Test Fetch Blocking</button>
+        <button onclick="testXHR()">Test XHR Blocking</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        <button onclick="window.location.href='/'">Back to App</button>
+    </div>
+    
+    <div class="test-card">
+        <h2>Console Output</h2>
+        <div id="console-output"></div>
+    </div>
+    
+    <div class="test-card">
+        <h2>Instructions</h2>
+        <ol>
+            <li>Open your browser's Developer Tools (F12)</li>
+            <li>Go to the Console tab</li>
+            <li>Navigate to the main app and interact with maps</li>
+            <li>Check for any "events.mapbox.com" error messages</li>
+            <li>If you see "🔒 Blocked Mapbox telemetry request" messages, it's working!</li>
+        </ol>
+    </div>
+
+    <script>
+        let consoleDiv = document.getElementById('console-output');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            consoleDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        function clearConsole() {
+            consoleDiv.innerHTML = '';
+        }
+        
+        async function testFetch() {
+            log('Testing fetch blocking...', 'info');
+            try {
+                const response = await fetch('https://events.mapbox.com/events/v2?access_token=test');
+                log(`✅ Fetch blocked successfully! Status: ${response.status}`, 'success');
+            } catch (error) {
+                log(`❌ Fetch test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testXHR() {
+            log('Testing XHR blocking...', 'info');
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://events.mapbox.com/events/v2?access_token=test');
+            xhr.onload = function() {
+                log(`✅ XHR blocked successfully! Status: ${xhr.status}`, 'success');
+            };
+            xhr.onerror = function() {
+                log('❌ XHR test failed', 'error');
+            };
+            try {
+                xhr.send('{}');
+            } catch (error) {
+                log(`❌ XHR test error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        console.log = function(...args) {
+            if (args.some(arg => typeof arg === 'string' && arg.includes('Mapbox'))) {
+                log(args.join(' '), 'info');
+            }
+            originalLog.apply(console, args);
+        };
+        
+        log('🔒 Mapbox Telemetry Test Page Loaded', 'success');
+        
+        // Auto-run basic tests on page load
+        setTimeout(() => {
+            log('Running automatic tests...', 'info');
+            testFetch();
+            setTimeout(() => testXHR(), 1000);
+        }, 1000);
+    </script>
+</body>
+</html>

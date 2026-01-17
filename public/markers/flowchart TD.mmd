@@ -1,0 +1,32 @@
+flowchart TD
+    A[Physical Bot Sensors] --> B[Data Collection: Temp, Humidity, pH, Camera, Mic]
+    B --> C[Send Data to Backend Server]
+    C --> D[AI Processing & Analysis]
+    D --> E{Decision Point}
+    E -->|Irrigation Needed| F[Activate Irrigation System]
+    E -->|Pest/Disease Detected| G[Trigger Pest Control Alert]
+    E -->|Harvest Ready| H[Send Harvest Timing Notification]
+    E -->|Animal Detected| I[Animal Alert System]
+    I --> J[Play Sound via Speaker]
+    I --> K[Send Call/Message via Twilio]
+    D --> L[Integrate External Data]
+    L --> M[Weather API]
+    L --> N[Market API]
+    L --> O[Satellite Images]
+    L --> P[User Profile: Loans, Transactions, Knowledge Base]
+    M --> D
+    N --> D
+    O --> D
+    P --> D
+    D --> Q[Generate Guidance & Alerts]
+    Q --> R[Multilingual Voice Response via Speaker/Mic]
+    Q --> S[Push Notifications to App]
+    Q --> T[Immediate Assistance Commands]
+    F --> U[Automation Actions]
+    G --> U
+    H --> U
+    J --> U
+    K --> U
+    R --> U
+    S --> U
+    T --> U

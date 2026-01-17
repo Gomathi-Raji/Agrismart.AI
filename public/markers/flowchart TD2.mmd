@@ -1,0 +1,102 @@
+flowchart TD
+    classDef user fill:#e8f5e8,stroke:#2e7d32,stroke-width:3px,color:black,font-weight:bold
+    classDef page fill:#e1f5fe,stroke:#0277bd,stroke-width:3px,color:black,font-weight:bold
+    classDef service fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:black,font-weight:bold
+    classDef action fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:black,font-weight:bold
+
+    subgraph "👨‍🌾 Farmer Journey"
+        U1["🌱 Farmer Starts App<br/>(User)"]
+        U2["🔐 Login/Register<br/>(Auth Page)"]
+        U3["🏠 Dashboard/Home<br/>(Home Page)"]
+        U4["🤖 Ask AI for Advice<br/>(Chatbot Page)"]
+        U5["📊 Check Market Prices<br/>(MarketAnalysis Page)"]
+        U6["🔍 Diagnose Crop Issues<br/>(Diagnose Page)"]
+        U7["🌾 Get Crop Recommendations<br/>(Recommendations Page)"]
+        U8["🛒 Browse & Buy Products<br/>(Marketplace Page)"]
+        U9["👥 Join Community<br/>(Community Page)"]
+        U10["🎮 Earn Rewards<br/>(Gamification Page)"]
+        U11["💳 Make Payments<br/>(Cart/Payment Flow)"]
+        U12["🔔 Receive Alerts<br/>(Notifications)"]
+        U13["🤖 Interact with Bot<br/>(Bot Commands)"]
+        U14["⚙️ Manage Profile<br/>(Settings Page)"]
+    end
+    class U1 user
+    class U2,U3,U4,U5,U6,U7,U8,U9,U10,U11,U12,U13,U14 page
+
+    subgraph "🔗 Services Triggered"
+        S1["🔐 Auth Service<br/>(JWT, User Mgmt)"]
+        S2["🤖 AI Service<br/>(Gemini Chat/Analysis)"]
+        S3["💰 Market Service<br/>(Govt API Data)"]
+        S4["🌤️ Weather Service<br/>(Forecasts/Alerts)"]
+        S5["💳 Payment Service<br/>(Razorpay)"]
+        S6["📞 Alert Service<br/>(Twilio Voice/SMS)"]
+        S7["🤖 Bot Service<br/>(IoT Commands)"]
+        S8["🗺️ Map Service<br/>(Geolocation)"]
+        S9["📈 Analytics Service<br/>(Payment/Usage Insights)"]
+        S10["🔗 Blockchain Service<br/>(Transaction Records)"]
+        S11["📦 Product Service<br/>(Inventory, Reviews)"]
+        S12["🚚 Delivery Service<br/>(Order Tracking)"]
+        S13["🎯 Gamification Service<br/>(Challenges, Points)"]
+        S14["🌐 Language Service<br/>(Multilingual Support)"]
+    end
+    class S1,S2,S3,S4,S5,S6,S7,S8,S9,S10,S11,S12,S13,S14 service
+
+    subgraph "⚡ Actions & Integrations"
+        A1["📱 UI Rendering<br/>(React Components)"]
+        A2["🔄 API Calls<br/>(Axios to Backend)"]
+        A3["💾 Data Storage<br/>(MongoDB)"]
+        A4["🔗 External APIs<br/>(Twilio, Weather, etc.)"]
+        A5["🤖 Bot Commands<br/>(Irrigation, Alerts)"]
+        A6["📊 Data Analytics<br/>(Charts, Reports)"]
+        A7["🔒 Security<br/>(Encryption, Auth)"]
+        A8["🌍 Offline Support<br/>(Caching, Sync)"]
+    end
+    class A1,A2,A3,A4,A5,A6,A7,A8 action
+
+    U1 --> U2 --> S1 --> U3
+    U3 --> U4 --> S2 --> A2
+    U3 --> U5 --> S3 --> A2
+    U3 --> U6 --> S2 --> A2
+    U3 --> U7 --> S2 --> A2
+    U3 --> U8 --> S11 --> A2
+    U3 --> U9 --> S13 --> A2
+    U3 --> U10 --> S13 --> A2
+    U3 --> U11 --> S5 --> A2
+    U3 --> U12 --> S4 --> S6 --> A4
+    U3 --> U13 --> S7 --> A5
+    U3 --> U14 --> S1 --> A2
+    S1 --> A3
+    S2 --> A4
+    S3 --> A4
+    S4 --> A4
+    S5 --> A4
+    S6 --> A4
+    S7 --> A4
+    S8 --> A4
+    S9 --> A6
+    S10 --> A7
+    S11 --> A3
+    S12 --> A3
+    S13 --> A3
+    S14 --> A1
+    A1 --> U3
+    A2 --> S1
+    A3 --> S1
+    A4 --> S1
+    A5 --> S1
+    A6 --> S9
+    A7 --> S1
+    A8 --> S1
+
+    %% Key Flows
+    U4 -.->|"Crop Advice"| S2
+    U5 -.->|"Price Trends"| S3
+    U6 -.->|"Disease Detection"| S2
+    U7 -.->|"Personalized Suggestions"| S2
+    U8 -.->|"Product Listings"| S11
+    U9 -.->|"Community Posts"| S13
+    U10 -.->|"Earn Points"| S13
+    U11 -.->|"Secure Transactions"| S5
+    U12 -.->|"Weather Alerts"| S6
+    U13 -.->|"Field Automation"| S7
+    U14 -.->|"Profile Updates"| S1
