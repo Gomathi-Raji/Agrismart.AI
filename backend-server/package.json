@@ -10,6 +10,7 @@
     "swagger:dev": "nodemon swagger-server.js"
   },
   "dependencies": {
+    "@sentry/node": "^7.120.3",
     "axios": "^1.6.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -27,6 +28,8 @@
     "onnxruntime-node": "^1.17.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pino": "^9.7.0",
+    "pino-http": "^10.5.0",
     "razorpay": "^2.9.6",
     "sharp": "^0.33.0",
     "socket.io": "^4.7.4",

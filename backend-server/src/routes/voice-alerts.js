@@ -66,6 +66,77 @@ function generateVoiceAlert(message, language = 'multilingual') {
 }
 
 /**
+ * Test voice alert endpoint (for development - no auth required)
+ * POST /api/voice-alerts/test-send
+ */
+router.post('/test-send', async (req, res) => {
+    try {
+        // Check if Twilio client is available
+        if (!client && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+            try {
+                client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+                console.log('✅ Twilio client reinitialized successfully');
+            } catch (error) {
+                console.warn('⚠️ Failed to reinitialize Twilio client:', error.message);
+            }
+        }
+
+        if (!client) {
+            return res.status(503).json({
+                success: false,
+                message: 'Voice alert service is not configured. Please check Twilio credentials in backend .env file.'
+            });
+        }
+
+        const { message, targetNumber, language = 'multilingual' } = req.body;
+
+        if (!message || !targetNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Message and target number are required'
+            });
+        }
+
+        // Validate phone number format
+        const phoneRegex = /^\+[1-9]\d{1,14}$/;
+        if (!phoneRegex.test(targetNumber)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid phone number format. Use international format (+91XXXXXXXXXX)'
+            });
+        }
+
+        console.log(`🧪 [TEST] Sending voice alert to ${targetNumber}`);
+        console.log(`📝 Message: ${message.substring(0, 100)}...`);
+
+        // Generate TwiML for the voice message
+        const twiml = generateVoiceAlert(message, language);
+
+        // Make the call using Twilio
+        const call = await client.calls.create({
+            twiml: twiml,
+            to: targetNumber,
+            from: process.env.TWILIO_PHONE_NUMBER
+        });
+
+        console.log(`✅ [TEST] Call initiated! SID: ${call.sid}`);
+
+        res.json({
+            success: true,
+            message: 'Test voice alert initiated successfully',
+            callSid: call.sid,
+            status: call.status
+        });
+    } catch (error) {
+        console.error('❌ [TEST] Voice alert error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to send voice alert'
+        });
+    }
+});
+
+/**
  * Send voice alert to a phone number
  * POST /api/voice-alerts/send
  */

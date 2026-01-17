@@ -11,12 +11,12 @@ interface PlantAnalysisResult {
   immediateActions: string[];
   detailedTreatment: {
     organicSolutions: string[];
-    chemicalSolutions: string[];
+    naturalRemedies: string[];
     stepByStepCure: string[];
   };
   fertilizers: Array<{
     name: string;
-    type: 'organic' | 'chemical';
+    type: 'organic' | 'natural';
     application: string;
     timing: string;
   }>;
@@ -139,7 +139,7 @@ export const generateDiagnosisReport = async (analysisResult: PlantAnalysisResul
     
     if (analysisResult.detailedTreatment) {
       addSection('Organic Solutions', analysisResult.detailedTreatment.organicSolutions);
-      addSection('Chemical Solutions', analysisResult.detailedTreatment.chemicalSolutions);
+      addSection('Traditional Home Remedies', analysisResult.detailedTreatment.naturalRemedies);
       addSection('Treatment Steps', analysisResult.detailedTreatment.stepByStepCure);
     }
   }

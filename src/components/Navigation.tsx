@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { VoiceSearchCommand } from "@/components/navigation/VoiceSearchCommand";
 import { useAuth } from "@/contexts/AuthContext";
 // import { LanguageToggle } from "@/components/LanguageToggle";
 // import { useLanguage } from "@/contexts/LanguageContext";
@@ -26,7 +27,6 @@ import {
   Cloud,
   Sparkles,
   Bell,
-  Search,
   ChevronDown,
   LogOut
 } from "lucide-react";export function Navigation() {
@@ -127,9 +127,7 @@ import {
 
               {/* Theme Toggle and Search */}
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon">
-                  <Search className="h-4 w-4" />
-                </Button>
+                <VoiceSearchCommand />
                 <NotificationBell 
                   variant="outline"
                   size="md"

@@ -50,7 +50,7 @@ export default function Recommendations() {
   const [farmingExperience, setFarmingExperience] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationResponse | null>(null);
-  const [geminiApiKey] = useState('AIzaSyDmcIzZ2SDSMAQuewlneQELBpxT4LrVr4g'); // User-provided API key
+  const [geminiApiKey] = useState((import.meta.env.VITE_GEMINI_API_KEY as string) || '');
   const { weatherData } = useWeather();
   const [showMapSelector, setShowMapSelector] = useState(false);
 

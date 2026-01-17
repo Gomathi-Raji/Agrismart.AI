@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,8 +29,47 @@ import {
   Zap
 } from 'lucide-react';
 
-// ⚠️ SECURITY WARNING: Twilio credentials are exposed in frontend code
-// This is for demonstration purposes only. In production, use server-side API calls.
+// Backend API URL for voice alerts
+const BACKEND_API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002';
+
+// Helper function to make voice alert API calls
+async function sendVoiceAlert(params: {
+  message: string;
+  targetNumber: string;
+  language: string;
+}): Promise<{ success: boolean; callSid?: string; error?: string }> {
+  try {
+    // Get auth token from localStorage
+    const token = localStorage.getItem('authToken');
+    
+    // Use test-send endpoint for testing (no auth required), or send for production
+    const endpoint = token ? 'send' : 'test-send';
+    
+    const response = await fetch(`${BACKEND_API_URL}/api/voice-alerts/${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        message: params.message,
+        targetNumber: params.targetNumber,
+        language: params.language
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Failed to send voice alert');
+    }
+
+    return { success: true, callSid: data.callSid || data.data?.callSid };
+  } catch (error: any) {
+    console.error('Voice alert API error:', error);
+    return { success: false, error: error.message };
+  }
+}
 
 interface VoiceAlert {
   id: string;
@@ -156,107 +195,20 @@ export function VoiceAlertSystem() {
 
     setAlertHistory(prev => [newAlert, ...prev]);
 
-  const handleSendVoiceAlert = async () => {
-    const message = selectedTemplate && selectedTemplate !== 'custom' ?
-      alertTemplates.find(t => t.id === selectedTemplate)?.message || '' :
-      customMessage;
-
-    if (!message.trim() || !targetNumber.trim()) {
-      toast.error('Please provide a message and target number');
-      return;
-    }
-
-    setIsCallActive(true);
-
-    const newAlert: VoiceAlert = {
-      id: Date.now().toString(),
-      message: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
-      language: languages.find(l => l.code === selectedLanguage)?.name || 'English',
-      targetNumber,
-      status: 'calling',
-      timestamp: new Date().toLocaleString()
-    };
-
-    setAlertHistory(prev => [newAlert, ...prev]);
-
     try {
-      // Make real Twilio voice call directly from frontend
-      toast.loading('Initiating real voice call...', { id: 'voice-call' });
+      toast.loading('Initiating voice call via backend...', { id: 'voice-call' });
 
-      // Twilio credentials (Note: In production, these should be server-side only)
-      const twilioAccountSid = import.meta.env.VITE_TWILIO_ACCOUNT_SID;
-      const twilioAuthToken = import.meta.env.VITE_TWILIO_AUTH_TOKEN;
-      const twilioPhoneNumber = import.meta.env.VITE_TWILIO_PHONE_NUMBER;
-
-      // Generate TwiML for the voice message
-      const generateTwiml = (message: string, language: string) => {
-        let twiml = `<?xml version="1.0" encoding="UTF-8"?><Response>`;
-
-        if (language === 'multilingual') {
-          // Multi-language alert (Tamil, English, Hindi)
-          twiml += `
-    <Say voice="Polly.Aditi" language="hi-IN" rate="fast">
-        वणक्कम। नांगल अग्रिस्मार्त एलर्त सर्विस। उंगलुक्कु मुक्कियमान कृषि एलर्त उल्लदु। ${message}
-    </Say>
-    <Pause length="2"/>
-    <Say voice="alice" language="en-US" rate="fast">
-        Hello. This is AgriSmart alert service. You have an important agricultural alert. ${message}
-    </Say>
-    <Pause length="2"/>
-    <Say voice="Polly.Aditi" language="hi-IN" rate="fast">
-        नमस्कार। हम एग्रीस्मार्ट अलर्ट सेवा हैं। आपके लिए महत्वपूर्ण कृषि चेतावनी है। ${message}
-    </Say>`;
-        } else if (language === 'hi-IN') {
-          twiml += `
-    <Say voice="Polly.Aditi" language="hi-IN" rate="normal">
-        नमस्कार। एग्रीस्मार्ट से महत्वपूर्ण संदेश। ${message}
-    </Say>`;
-        } else if (language === 'ta-IN') {
-          twiml += `
-    <Say voice="Polly.Aditi" language="hi-IN" rate="normal">
-        वणक्कम। अग्रिस्मार्त इलिरुन्दु मुक्कियमान संदेशम्। ${message}
-    </Say>`;
-        } else {
-          // Default to English
-          twiml += `
-    <Say voice="alice" language="en-US" rate="normal">
-        Hello. This is an important message from AgriSmart. ${message}
-    </Say>`;
-        }
-
-        twiml += `
-    <Pause length="1"/>
-    <Say voice="alice" language="en-US" rate="normal">
-        Thank you for listening. This alert was sent by AgriSmart monitoring system.
-    </Say>
-</Response>`;
-
-        return twiml;
-      };
-
-      const twiml = generateTwiml(message, selectedLanguage);
-
-      // Make direct API call to Twilio (Note: This exposes credentials - use server-side in production)
-      const auth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-
-      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls.json`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          From: twilioPhoneNumber,
-          To: targetNumber,
-          Twiml: twiml
-        })
+      // Use backend API instead of calling Twilio directly
+      const result = await sendVoiceAlert({
+        message,
+        targetNumber,
+        language: selectedLanguage
       });
 
-      if (response.ok) {
-        const callData = await response.json();
-        console.log('Real call initiated:', callData);
+      if (result.success) {
+        console.log('Voice call initiated:', result.callSid);
 
-        // Simulate call progress
+        // Show call progress
         setTimeout(() => {
           toast.loading('Call in progress...', { id: 'voice-call' });
         }, 2000);
@@ -268,7 +220,7 @@ export function VoiceAlertSystem() {
               : alert
           ));
 
-          toast.success(`Real voice call completed! Call SID: ${callData.sid}`, { id: 'voice-call' });
+          toast.success(`Voice call completed! Call SID: ${result.callSid}`, { id: 'voice-call' });
           setIsCallActive(false);
 
           // Clear form
@@ -276,10 +228,9 @@ export function VoiceAlertSystem() {
           setCustomMessage('');
         }, 8000);
       } else {
-        const errorData = await response.json();
-        throw new Error(`Twilio API Error: ${errorData.message || response.statusText}`);
+        throw new Error(result.error || 'Failed to send voice alert');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Voice alert error:', error);
       setAlertHistory(prev => prev.map(alert =>
         alert.id === newAlert.id
@@ -291,75 +242,36 @@ export function VoiceAlertSystem() {
       setIsCallActive(false);
     }
   };
-  };
 
   const handleTestCall = async () => {
+    if (!targetNumber.trim()) {
+      toast.error('Please enter a target phone number');
+      return;
+    }
+
     setIsCallActive(true);
-    toast.loading('Initiating real quick test call...', { id: 'test-call' });
+    toast.loading('Initiating test call via backend...', { id: 'test-call' });
 
     try {
-      // Twilio credentials
-      const twilioAccountSid = import.meta.env.VITE_TWILIO_ACCOUNT_SID;
-      const twilioAuthToken = import.meta.env.VITE_TWILIO_AUTH_TOKEN;
-      const twilioPhoneNumber = import.meta.env.VITE_TWILIO_PHONE_NUMBER;
-
       const testMessage = 'This is a test voice alert from AgriSmart system. All systems are working correctly.';
-      const generateTwiml = (message: string, language: string) => {
-        let twiml = `<?xml version="1.0" encoding="UTF-8"?><Response>`;
 
-        if (language === 'multilingual') {
-          twiml += `
-    <Say voice="Polly.Aditi" language="hi-IN" rate="fast">
-        वणक्कम। नांगल अग्रिस्मार्त एलर्त सर्विस। ${message}
-    </Say>
-    <Pause length="1"/>
-    <Say voice="alice" language="en-US" rate="fast">
-        Hello. This is AgriSmart alert service. ${message}
-    </Say>
-    <Pause length="1"/>
-    <Say voice="Polly.Aditi" language="hi-IN" rate="fast">
-        नमस्कार। हम एग्रीस्मार्ट अलर्ट सेवा हैं। ${message}
-    </Say>`;
-        } else {
-          twiml += `
-    <Say voice="alice" language="en-US" rate="normal">
-        ${message}
-    </Say>`;
-        }
-
-        twiml += `</Response>`;
-        return twiml;
-      };
-
-      const twiml = generateTwiml(testMessage, selectedLanguage);
-      const auth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-
-      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls.json`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          From: twilioPhoneNumber,
-          To: targetNumber,
-          Twiml: twiml
-        })
+      const result = await sendVoiceAlert({
+        message: testMessage,
+        targetNumber,
+        language: selectedLanguage
       });
 
-      if (response.ok) {
-        const callData = await response.json();
-        console.log('Test call initiated:', callData);
+      if (result.success) {
+        console.log('Test call initiated:', result.callSid);
 
         setTimeout(() => {
-          toast.success(`Real test call completed! Call SID: ${callData.sid}`, { id: 'test-call' });
+          toast.success(`Test call completed! Call SID: ${result.callSid}`, { id: 'test-call' });
           setIsCallActive(false);
         }, 5000);
       } else {
-        const errorData = await response.json();
-        throw new Error(`Twilio API Error: ${errorData.message || response.statusText}`);
+        throw new Error(result.error || 'Failed to make test call');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Test call error:', error);
       toast.error(`Test call failed: ${error.message}`, { id: 'test-call' });
       setIsCallActive(false);
@@ -367,61 +279,34 @@ export function VoiceAlertSystem() {
   };
 
   const handleComprehensiveTest = async () => {
+    if (!targetNumber.trim()) {
+      toast.error('Please enter a target phone number');
+      return;
+    }
+
     setIsCallActive(true);
-    toast.loading('Starting comprehensive real voice alert test...', { id: 'comprehensive-test' });
+    toast.loading('Starting comprehensive voice alert test...', { id: 'comprehensive-test' });
 
     try {
-      // Twilio credentials
-      const twilioAccountSid = import.meta.env.VITE_TWILIO_ACCOUNT_SID;
-      const twilioAuthToken = import.meta.env.VITE_TWILIO_AUTH_TOKEN;
-      const twilioPhoneNumber = import.meta.env.VITE_TWILIO_PHONE_NUMBER;
-
-      const customMessage = selectedTemplate && selectedTemplate !== 'custom' ?
+      const alertMessage = selectedTemplate && selectedTemplate !== 'custom' ?
         alertTemplates.find(t => t.id === selectedTemplate)?.message :
         customMessage;
 
-      // Generate comprehensive multi-language TwiML
-      const comprehensiveTwiml = `<?xml version="1.0" encoding="UTF-8"?><Response>
-    <Say voice="Polly.Aditi" language="hi-IN" rate="fast">
-        वणक्कम। नांगल अग्रिस्मार्त एलर्त सर्विस। उंगलुक्कु मुक्कियमान कृषि एलर्त उल्लदु। ${customMessage || 'Heavy rain expected in your area. Please protect your crops and livestock.'}
-    </Say>
-    <Pause length="2"/>
-    <Say voice="alice" language="en-US" rate="fast">
-        Hello. This is AgriSmart alert service. You have an important agricultural alert. ${customMessage || 'Heavy rain expected in your area. Please protect your crops and livestock.'}
-    </Say>
-    <Pause length="2"/>
-    <Say voice="Polly.Aditi" language="hi-IN" rate="fast">
-        नमस्कार। हम एग्रीस्मार्ट अलर्ट सेवा हैं। आपके लिए महत्वपूर्ण कृषि चेतावनी है। ${customMessage || 'Heavy rain expected in your area. Please protect your crops and livestock.'}
-    </Say>
-    <Pause length="1"/>
-    <Say voice="alice" language="en-US" rate="normal">
-        Thank you for listening. This comprehensive test was sent by AgriSmart monitoring system.
-    </Say>
-</Response>`;
+      const message = alertMessage || 'Heavy rain expected in your area. Please protect your crops and livestock.';
 
-      const auth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-
-      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls.json`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          From: twilioPhoneNumber,
-          To: targetNumber,
-          Twiml: comprehensiveTwiml
-        })
+      const result = await sendVoiceAlert({
+        message,
+        targetNumber,
+        language: 'multilingual'
       });
 
-      if (response.ok) {
-        const callData = await response.json();
-        console.log('Comprehensive test call initiated:', callData);
+      if (result.success) {
+        console.log('Comprehensive test call initiated:', result.callSid);
 
         // Add comprehensive test result to history
         const comprehensiveTestAlert: VoiceAlert = {
           id: Date.now().toString(),
-          message: 'Comprehensive multi-language test completed (Real Call)',
+          message: 'Comprehensive multi-language test completed',
           language: 'Multi-language (Comprehensive)',
           targetNumber,
           status: 'completed',
@@ -432,16 +317,15 @@ export function VoiceAlertSystem() {
         setAlertHistory(prev => [comprehensiveTestAlert, ...prev]);
 
         toast.success(
-          `Real comprehensive test completed! Call SID: ${callData.sid} | Status: ${callData.status}`,
+          `Comprehensive test completed! Call SID: ${result.callSid}`,
           { id: 'comprehensive-test', duration: 10000 }
         );
       } else {
-        const errorData = await response.json();
-        throw new Error(`Twilio API Error: ${errorData.message || response.statusText}`);
+        throw new Error(result.error || 'Failed to make comprehensive test call');
       }
 
       setIsCallActive(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Comprehensive test error:', error);
       toast.error(`Comprehensive test failed: ${error.message}`, { id: 'comprehensive-test' });
       setIsCallActive(false);

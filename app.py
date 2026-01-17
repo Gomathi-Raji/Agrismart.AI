@@ -3,13 +3,16 @@ import google.generativeai as genai
 from PIL import Image
 import io
 import base64
+import os
 
-# Configure the API key
-GEMINI_API_KEY = "AIzaSyB7_4jF675ctOel_Ndyf0KAL3Ay8wFpJkM"
-genai.configure(api_key=GEMINI_API_KEY)
+def get_gemini_model():
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY")
+    if not api_key:
+        st.error("Gemini API key not configured. Set GEMINI_API_KEY in your environment.")
+        st.stop()
 
-# Initialize the model
-model = genai.GenerativeModel('gemini-2.5-flash')
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel('gemini-2.5-flash')
 
 def encode_image_to_base64(image):
     """Convert PIL image to base64 string"""
@@ -42,6 +45,7 @@ def generate_crop_breed(image1, image2):
     """
     
     try:
+        model = get_gemini_model()
         # Convert images for Gemini
         response = model.generate_content([
             prompt,

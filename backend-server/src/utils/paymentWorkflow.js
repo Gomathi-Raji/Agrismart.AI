@@ -6,10 +6,12 @@ const blockchainService = require('./blockchain');
 // Payment Workflow Manager
 class PaymentWorkflowManager {
     constructor() {
-        this.razorpay = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_RXvtqZ9mxuwewf',
-            key_secret: process.env.RAZORPAY_KEY_SECRET || 'fh78cPul1NeNEslW0LX0owG8'
-        });
+        const keyId = process.env.RAZORPAY_KEY_ID;
+        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+        this.razorpay = (keyId && keySecret)
+            ? new Razorpay({ key_id: keyId, key_secret: keySecret })
+            : null;
     }
 
     // Step 1: Initialize Payment Workflow
@@ -63,6 +65,9 @@ class PaymentWorkflowManager {
     // Step 2: Create Payment Intent
     async createPaymentIntent(orderId, userId, paymentData) {
         try {
+            if (!this.razorpay) {
+                throw new Error('Razorpay is not configured (RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET)');
+            }
             const { amount, currency = 'INR', paymentMethodId } = paymentData;
 
             // Initialize payment workflow
@@ -151,7 +156,7 @@ class PaymentWorkflowManager {
                 razorpayOrderId: razorpayOrder.id,
                 amount: razorpayOrder.amount,
                 currency: razorpayOrder.currency,
-                razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_RXvtqZ9mxuwewf',
+                razorpayKeyId: process.env.RAZORPAY_KEY_ID,
                 blockchainTxHash: blockchainTx.transactionHash,
                 workflow: payment.workflow
             };
@@ -164,6 +169,9 @@ class PaymentWorkflowManager {
     // Step 3: Confirm Payment and Hold in Escrow
     async confirmPayment(paymentId, paymentDetails, userId) {
         try {
+            if (!this.razorpay) {
+                throw new Error('Razorpay is not configured (RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET)');
+            }
             const { razorpayPaymentId, razorpayOrderId, razorpaySignature } = paymentDetails;
 
             // Find payment
@@ -182,7 +190,11 @@ class PaymentWorkflowManager {
 
             // Verify Razorpay signature
             const sign = razorpayOrderId + '|' + razorpayPaymentId;
-            const expectedSign = crypto.HmacSHA256(sign, process.env.RAZORPAY_KEY_SECRET || 'fh78cPul1NeNEslW0LX0owG8')
+            const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+            if (!razorpaySecret) {
+                throw new Error('Razorpay secret is not configured (RAZORPAY_KEY_SECRET)');
+            }
+            const expectedSign = crypto.HmacSHA256(sign, razorpaySecret)
                 .toString(crypto.enc.Hex);
 
             if (razorpaySignature !== expectedSign) {

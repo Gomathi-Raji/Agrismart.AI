@@ -34,7 +34,16 @@ backend-server
 
 ## Configuration
 
-Create a `.env` file in the root directory and add your MongoDB connection string and any other necessary environment variables.
+The backend loads environment variables from the repo root `.env` (see `dotenv.config({ path: '../.env' })` in `src/app.js`).
+
+From the repository root:
+```
+cp .env.example .env
+```
+
+Then set the server variables (no `VITE_` prefix), e.g. `MONGODB_URI`, `TWILIO_*`, `PORT`, `FRONTEND_URL`.
+
+Do not commit `.env` to git. Use a secret store in production.
 
 ## Usage
 

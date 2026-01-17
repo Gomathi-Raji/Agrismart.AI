@@ -9,10 +9,13 @@ const blockchainService = require('../utils/blockchain');
 const AdvancedForecastingService = require('../utils/advancedForecastingService');
 
 // Initialize Razorpay
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_RXvtqZ9mxuwewf',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'fh78cPul1NeNEslW0LX0owG8'
-});
+let razorpay = null;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+    razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+}
 
 // Weather Controllers
 const getCurrentWeather = async (req, res) => {
@@ -3172,6 +3175,14 @@ const processRefund = async (req, res) => {
         const userId = req.user.id;
         const { paymentId } = req.params;
         const { amount, reason = 'requested_by_customer', notes } = req.body;
+
+        if (!razorpay) {
+            return res.status(503).json({
+                error: 'Payment provider is not configured',
+                code: 'RAZORPAY_NOT_CONFIGURED',
+                details: { required: ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET'] }
+            });
+        }
 
         // Find payment
         const payment = await Payment.findOne({ _id: paymentId, user: userId });

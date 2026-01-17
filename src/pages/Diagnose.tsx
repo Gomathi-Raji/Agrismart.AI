@@ -50,12 +50,12 @@ interface PlantAnalysisResult {
   immediateActions: string[];
   detailedTreatment: {
     organicSolutions: string[];
-    chemicalSolutions: string[];
+    naturalRemedies: string[];
     stepByStepCure: string[];
   };
   fertilizers: Array<{
     name: string;
-    type: 'organic' | 'chemical';
+    type: 'organic' | 'natural';
     application: string;
     timing: string;
   }>;
@@ -153,23 +153,23 @@ export default function Diagnose() {
       price: "$24.99",
       rating: 4.8,
       image: neemOilImage,
-      description: "Natural fungicide for plant diseases"
+      description: "100% natural fungicide & pest repellent"
     },
     {
       id: 2,
-      name: "NPK Fertilizer",
+      name: "Organic Compost Blend",
       price: "$18.99",
       rating: 4.6,
       image: fertilizerImage,
-      description: "Balanced nutrients for healthy growth"
+      description: "Rich organic nutrients for soil health"
     },
     {
       id: 3,
-      name: "Disease Recovery Kit",
+      name: "Natural Recovery Kit",
       price: "$32.99",
       rating: 4.9,
       image: recoveryImage,
-      description: "Complete treatment for common diseases"
+      description: "Herbal & organic disease treatment"
     }
   ];
 
@@ -328,6 +328,13 @@ Example 2 - Healthy Corn:
 Input: Corn plant in dry field, no visible issues, regular irrigation
 Expected: {"status": "healthy", "plantType": "Corn (Zea mays)", "confidence": 88, "disease": null, ...}
 
+**IMPORTANT: NATURAL & ORGANIC ONLY**
+We promote sustainable, chemical-free farming. ALL recommendations must be:
+- 100% natural and organic - NO synthetic chemicals, pesticides, or artificial fertilizers
+- Traditional remedies like neem oil, garlic spray, turmeric, ash, cow dung, vermicompost
+- Biological controls, companion planting, and integrated pest management
+- Home-made solutions using kitchen ingredients (baking soda, soap, vinegar)
+
 **Task:** Provide a comprehensive analysis in JSON format with the following structure:
 
 {
@@ -337,17 +344,17 @@ Expected: {"status": "healthy", "plantType": "Corn (Zea mays)", "confidence": 88
   "disease": "specific disease name if diseased, null if healthy",
   "severity": "mild/moderate/severe if diseased, null if healthy",
   "symptoms": ["list of visible symptoms"],
-  "immediateActions": ["urgent steps to take"],
+  "immediateActions": ["urgent natural steps to take"],
   "detailedTreatment": {
-    "organicSolutions": ["natural treatment methods"],
-    "chemicalSolutions": ["chemical treatments if needed"],
-    "stepByStepCure": ["detailed cure process"]
+    "organicSolutions": ["organic treatment methods like neem oil, compost tea"],
+    "naturalRemedies": ["traditional home remedies like turmeric paste, garlic spray, wood ash"],
+    "stepByStepCure": ["detailed natural cure process"]
   },
   "fertilizers": [
     {
-      "name": "fertilizer name",
-      "type": "organic/chemical",
-      "application": "how to apply",
+      "name": "organic fertilizer name (e.g., vermicompost, bone meal, seaweed extract)",
+      "type": "organic or natural ONLY - never chemical",
+      "application": "how to apply naturally",
       "timing": "when to apply"
     }
   ],
@@ -355,19 +362,19 @@ Expected: {"status": "healthy", "plantType": "Corn (Zea mays)", "confidence": 88
     {
       "nutrient": "nutrient name",
       "deficiencySign": "signs of deficiency",
-      "sources": ["natural sources"]
+      "sources": ["natural organic sources like compost, manure, green manure"]
     }
   ],
-  "preventionTips": ["long-term prevention strategies"],
-  "growthTips": ["tips for better growth - always include even for diseased plants"],
-  "seasonalCare": ["seasonal care recommendations"],
-  "companionPlants": ["plants that grow well together"],
+  "preventionTips": ["long-term organic prevention strategies"],
+  "growthTips": ["natural tips for better growth - always include even for diseased plants"],
+  "seasonalCare": ["seasonal organic care recommendations"],
+  "companionPlants": ["plants that naturally repel pests and grow well together"],
   "warningsSigns": ["signs to watch for"],
-  "appreciation": "encouraging message for the farmer",
-  "additionalAdvice": "any extra recommendations"
+  "appreciation": "encouraging message for the farmer practicing natural farming",
+  "additionalAdvice": "recommendations for sustainable organic practices"
 }
 
-Be detailed and practical. Focus on actionable advice that farmers can implement. Use the context information to improve accuracy and specificity.`
+Be detailed and practical. Focus on actionable NATURAL advice that farmers can implement without buying synthetic products. Emphasize traditional wisdom and sustainable practices.`
               },
               {
                 inline_data: {
@@ -412,7 +419,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
           immediateActions: parsedResult.immediateActions || [],
           detailedTreatment: parsedResult.detailedTreatment || {
             organicSolutions: [],
-            chemicalSolutions: [],
+            naturalRemedies: [],
             stepByStepCure: []
           },
           fertilizers: parsedResult.fertilizers || [],
@@ -422,12 +429,12 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
           seasonalCare: parsedResult.seasonalCare || [],
           companionPlants: parsedResult.companionPlants || [],
           warningsSigns: parsedResult.warningsSigns || [],
-          appreciation: parsedResult.appreciation || "Thank you for taking care of your plants!",
+          appreciation: parsedResult.appreciation || "Thank you for practicing natural farming!",
           additionalAdvice: parsedResult.additionalAdvice || ""
         };
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
-        // Return enhanced fallback data
+        // Return enhanced fallback data - 100% organic
         return {
           status: "diseased",
           plantType: "Unknown plant",
@@ -435,23 +442,29 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
           disease: "Possible fungal infection",
           severity: "moderate",
           symptoms: ["Discoloration visible on leaves", "Potential spotting patterns"],
-          immediateActions: ["Remove affected leaves", "Improve air circulation", "Reduce watering frequency"],
+          immediateActions: ["Remove affected leaves carefully", "Improve air circulation around plants", "Reduce watering frequency"],
           detailedTreatment: {
-            organicSolutions: ["Apply neem oil spray", "Use baking soda solution", "Improve soil drainage"],
-            chemicalSolutions: ["Copper-based fungicide", "Systemic fungicide for severe cases"],
+            organicSolutions: ["Apply diluted neem oil spray (2ml per liter)", "Use baking soda solution (1 tsp per liter)", "Apply garlic-chili spray for pest control"],
+            naturalRemedies: ["Turmeric paste on wounds", "Wood ash around base", "Cow urine diluted 1:10 as foliar spray", "Buttermilk spray for fungal issues"],
             stepByStepCure: [
-              "Remove all affected plant parts",
-              "Apply organic treatment every 3-4 days",
-              "Monitor for 2 weeks",
-              "Switch to chemical treatment if no improvement"
+              "Remove all affected plant parts and burn them",
+              "Apply neem oil spray every 3-4 days",
+              "Add vermicompost to strengthen plant immunity",
+              "Monitor for 2 weeks and repeat treatment if needed"
             ]
           },
           fertilizers: [
             {
-              name: "Balanced NPK Fertilizer",
-              type: "chemical",
-              application: "Dilute and apply to soil",
+              name: "Vermicompost",
+              type: "organic",
+              application: "Mix 500g around plant base",
               timing: "Every 2-3 weeks during growing season"
+            },
+            {
+              name: "Jeevamrit (fermented organic culture)",
+              type: "natural",
+              application: "Dilute 1:10 and apply to soil",
+              timing: "Weekly during active growth"
             }
           ],
           nutritionSuggestions: [
@@ -461,13 +474,13 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
               sources: ["Compost", "Fish emulsion", "Blood meal"]
             }
           ],
-          preventionTips: ["Ensure proper spacing between plants", "Water at soil level", "Regular inspection"],
-          growthTips: ["Provide adequate sunlight", "Maintain consistent watering", "Use quality soil"],
-          seasonalCare: ["Adjust watering based on season", "Provide protection during extreme weather"],
-          companionPlants: ["Marigolds", "Basil", "Chives"],
+          preventionTips: ["Ensure proper spacing between plants", "Water at soil level", "Regular inspection", "Practice crop rotation"],
+          growthTips: ["Provide adequate sunlight", "Maintain consistent watering", "Use organic compost for soil health"],
+          seasonalCare: ["Adjust watering based on season", "Use mulching to retain moisture"],
+          companionPlants: ["Marigolds (pest repellent)", "Basil", "Chives", "Lemongrass"],
           warningsSigns: ["Wilting", "Unusual discoloration", "Pest presence"],
-          appreciation: "Great job monitoring your plant's health! Early detection is key to successful treatment.",
-          additionalAdvice: "Consider consulting with local agricultural extension services for region-specific advice."
+          appreciation: "Great job practicing natural farming! Early detection is key to successful organic treatment.",
+          additionalAdvice: "Continue using natural methods - they work best when applied consistently. Consult local organic farming communities for region-specific traditional remedies."
         };
       }
     } catch (error) {
@@ -485,7 +498,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
           immediateActions: ["Please try again later", "Contact support for quota increase"],
           detailedTreatment: {
             organicSolutions: [],
-            chemicalSolutions: [],
+            naturalRemedies: [],
             stepByStepCure: []
           },
           fertilizers: [],
@@ -500,7 +513,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
         };
       }
       
-      // Return comprehensive fallback data for other errors
+      // Return comprehensive fallback data for other errors - 100% organic
       return {
         status: "healthy",
         plantType: "Healthy plant",
@@ -511,15 +524,21 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
         immediateActions: [],
         detailedTreatment: {
           organicSolutions: [],
-          chemicalSolutions: [],
+          naturalRemedies: [],
           stepByStepCure: []
         },
         fertilizers: [
           {
-            name: "Organic Compost",
+            name: "Vermicompost",
             type: "organic",
             application: "Mix into soil around the base",
             timing: "Monthly during growing season"
+          },
+          {
+            name: "Kitchen Compost",
+            type: "natural",
+            application: "Layer around plants as mulch",
+            timing: "Every 2 weeks"
           }
         ],
         nutritionSuggestions: [
@@ -657,10 +676,10 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
               <Leaf className="h-8 w-8" />
             </motion.div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2">
-              AI Plant Health Lab
+              🌿 Natural Plant Health Lab
             </h1>
             <p className="text-primary-foreground/90 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-              Advanced crop disease detection with real-time AI analysis powered by environmental data
+              AI-powered disease detection with <span className="font-semibold">100% natural & organic</span> treatment recommendations
             </p>
           </div>
         </div>
@@ -1022,6 +1041,22 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Natural Farming Banner */}
+                  <div className="bg-gradient-to-r from-green-100 via-emerald-100 to-teal-100 dark:from-green-950/50 dark:via-emerald-950/50 dark:to-teal-950/50 rounded-xl p-4 border border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <Leaf className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold text-green-800 dark:text-green-200">100% Natural Recommendations</span>
+                      </div>
+                      <Badge className="bg-green-600 text-white">Chemical-Free</Badge>
+                      <Badge className="bg-emerald-600 text-white">Organic Only</Badge>
+                      <Badge className="bg-teal-600 text-white">Eco-Friendly</Badge>
+                    </div>
+                    <p className="text-center text-sm text-green-700 dark:text-green-300 mt-2">
+                      All treatment suggestions follow sustainable, traditional farming practices
+                    </p>
+                  </div>
+
                   {/* Quick Summary */}
                   <div className="bg-muted/30 rounded-lg p-4 border">
                     <div className="flex items-center justify-between mb-4">
@@ -1216,21 +1251,24 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                         {/* Fertilizer Recommendations Chart */}
                         {analysisResult.fertilizers && analysisResult.fertilizers.length > 0 && (
                           <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
-                            <h5 className="font-medium mb-3 text-center">Fertilizer Recommendations</h5>
+                            <h5 className="font-medium mb-3 text-center flex items-center justify-center gap-2">
+                              🌱 Natural Fertilizer Recommendations
+                              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">100% Organic</Badge>
+                            </h5>
                             <ResponsiveContainer width="100%" height={200}>
                               <BarChart data={analysisResult.fertilizers.map((fert, index) => ({
                                 name: fert.name.length > 15 ? fert.name.substring(0, 15) + '...' : fert.name,
-                                organic: fert.type === 'organic' ? 80 : 20,
-                                chemical: fert.type === 'chemical' ? 80 : 20,
+                                organic: fert.type === 'organic' ? 90 : 70,
+                                natural: fert.type === 'natural' ? 90 : 70,
                                 fullName: fert.name
                               }))}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={(value, name) => [name === 'organic' ? 'Organic' : 'Chemical', 'Type']} />
+                                <Tooltip formatter={(value, name) => [name === 'organic' ? 'Organic' : 'Natural', 'Type']} />
                                 <Legend />
                                 <Bar dataKey="organic" stackId="a" fill="#10b981" name="Organic" />
-                                <Bar dataKey="chemical" stackId="a" fill="#3b82f6" name="Chemical" />
+                                <Bar dataKey="natural" stackId="a" fill="#84cc16" name="Natural" />
                               </BarChart>
                             </ResponsiveContainer>
                           </div>
@@ -1876,20 +1914,23 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                           )}
 
                           {/* Chemical Solutions */}
-                          {analysisResult.detailedTreatment.chemicalSolutions?.length > 0 && (
-                            <div className="bg-info/10 border border-info/20 rounded-lg p-4">
-                              <h5 className="font-semibold text-info mb-3 flex items-center gap-2">
-                                <Shield className="h-4 w-4" />
-                                Chemical Treatment Options
+                          {analysisResult.detailedTreatment.naturalRemedies?.length > 0 && (
+                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                              <h5 className="font-semibold text-amber-700 dark:text-amber-300 mb-3 flex items-center gap-2">
+                                <Sparkles className="h-4 w-4" />
+                                🌿 Traditional Home Remedies
                               </h5>
                               <div className="space-y-2">
-                                {analysisResult.detailedTreatment.chemicalSolutions.map((solution: string, index: number) => (
+                                {analysisResult.detailedTreatment.naturalRemedies.map((remedy: string, index: number) => (
                                   <div key={index} className="flex items-start gap-2">
-                                    <Shield className="h-4 w-4 text-info mt-0.5 shrink-0" />
-                                    <span className="text-sm">{solution}</span>
+                                    <Heart className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                                    <span className="text-sm">{remedy}</span>
                                   </div>
                                 ))}
                               </div>
+                              <p className="text-xs text-amber-600 dark:text-amber-400 mt-3 italic">
+                                💡 These traditional remedies have been used by farmers for generations
+                              </p>
                             </div>
                           )}
 
@@ -2025,34 +2066,48 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                   {/* Product Recommendations */}
                   <div className="space-y-4">
-                    <h5 className="font-semibold flex items-center gap-2">
-                      <ShoppingCart className="h-4 w-4" />
-                      Recommended Products
-                    </h5>
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-semibold flex items-center gap-2">
+                        <ShoppingCart className="h-4 w-4" />
+                        🌿 Recommended Natural Products
+                      </h5>
+                      <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
+                        100% Organic & Natural
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      All products are certified organic and chemical-free, supporting sustainable farming practices.
+                    </p>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {productRecommendations.map((product) => (
                         <motion.div
                           key={product.id}
-                          whileHover={{ scale: 1.05 }}
-                          className="bg-card border rounded-lg p-4 space-y-2"
+                          whileHover={{ scale: 1.03, y: -4 }}
+                          className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4 space-y-3 shadow-sm hover:shadow-lg transition-all"
                         >
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-full h-24 object-cover rounded"
-                          />
-                          <h6 className="font-medium text-sm">{product.name}</h6>
+                          <div className="relative">
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-full h-28 object-cover rounded-lg"
+                            />
+                            <Badge className="absolute top-2 right-2 bg-green-600 text-white text-xs">
+                              <Leaf className="h-3 w-3 mr-1" />
+                              Organic
+                            </Badge>
+                          </div>
+                          <h6 className="font-semibold text-sm text-green-800 dark:text-green-200">{product.name}</h6>
                           <p className="text-xs text-muted-foreground">{product.description}</p>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-xs">{product.rating}</span>
+                              <span className="text-xs font-medium">{product.rating}</span>
                             </div>
-                            <span className="font-bold text-sm">{product.price}</span>
+                            <span className="font-bold text-green-700 dark:text-green-300">{product.price}</span>
                           </div>
-                          <Button size="sm" className="w-full">
+                          <Button size="sm" className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
                             <ShoppingCart className="h-3 w-3 mr-1" />
-                            Buy Now
+                            Shop Natural
                           </Button>
                         </motion.div>
                       ))}

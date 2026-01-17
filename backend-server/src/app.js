@@ -5,6 +5,18 @@ const http = require('http');
 const socketIo = require('socket.io');
 const paymentMaintenance = require('./utils/paymentMaintenance');
 const dotenv = require('dotenv');
+const pinoHttp = require('pino-http');
+const logger = require('./utils/logger');
+const notFound = require('./middleware/notFound');
+const errorHandler = require('./middleware/errorHandler');
+
+let Sentry;
+try {
+    // Optional dependency; only active when SENTRY_DSN is provided
+    Sentry = require('@sentry/node');
+} catch {
+    Sentry = null;
+}
 
 dotenv.config({ path: '../.env' });
 
@@ -20,13 +32,14 @@ const io = socketIo(server, {
     }
 });
 const PORT = process.env.PORT || 3000;
-console.log('Environment variables loaded:', { 
-    PORT: process.env.PORT, 
+logger.info({
+    PORT: process.env.PORT,
     MONGODB_URI: process.env.MONGODB_URI ? 'SET' : 'NOT SET',
     TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID ? 'SET' : 'NOT SET',
     TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN ? 'SET' : 'NOT SET',
-    TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER ? 'SET' : 'NOT SET'
-});
+    TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER ? 'SET' : 'NOT SET',
+    SENTRY_DSN: process.env.SENTRY_DSN ? 'SET' : 'NOT SET'
+}, 'Environment variables loaded');
 
 // CORS configuration
 const corsOptions = {
@@ -36,6 +49,15 @@ const corsOptions = {
 };
 
 // Middleware
+if (Sentry && process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        environment: process.env.NODE_ENV || 'development'
+    });
+    app.use(Sentry.Handlers.requestHandler());
+}
+
+app.use(pinoHttp({ logger }));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -46,19 +68,19 @@ if (process.env.MONGODB_URI) {
         serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
     })
     .then(() => {
-        console.log('✅ MongoDB connected successfully');
+        logger.info('MongoDB connected successfully');
         global.dbConnected = true;
         // Initialize payment maintenance jobs after DB connection
         paymentMaintenance.initializeJobs();
         paymentMaintenance.startJobs();
-        console.log('✅ Payment maintenance jobs started');
+        logger.info('Payment maintenance jobs started');
     })
     .catch(err => {
-        console.warn('⚠️  MongoDB connection failed (continuing with mock data):', err.message);
+        logger.warn({ err: err.message }, 'MongoDB connection failed (continuing with mock data)');
         global.dbConnected = false;
     });
 } else {
-    console.warn('⚠️  No MONGODB_URI provided (running with mock data only)');
+    logger.warn('No MONGODB_URI provided (running with mock data only)');
     global.dbConnected = false;
 }
 
@@ -67,11 +89,11 @@ app.use('/api', routes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    logger.info({ socketId: socket.id }, 'Client connected');
 
     // Handle detection subscription
     socket.on('subscribe-detection', () => {
-        console.log('Client subscribed to detection:', socket.id);
+        logger.info({ socketId: socket.id }, 'Client subscribed to detection');
 
         // Add callback to detection service
         const detectionCallback = (detections) => {
@@ -82,7 +104,7 @@ io.on('connection', (socket) => {
 
         // Remove callback when client disconnects
         socket.on('disconnect', () => {
-            console.log('Client disconnected:', socket.id);
+            logger.info({ socketId: socket.id }, 'Client disconnected');
             animalDetectionService.removeDetectionCallback(detectionCallback);
         });
 
@@ -443,19 +465,17 @@ app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Something went wrong!' });
-});
+// 404 + error handling
+app.use(notFound);
 
-// 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({ message: 'Route not found' });
-});
+if (Sentry && process.env.SENTRY_DSN) {
+    app.use(Sentry.Handlers.errorHandler());
+}
+
+app.use(errorHandler);
 
 // Start the server
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`WebSocket server ready for real-time detection`);
+    logger.info({ port: PORT }, 'Server is running');
+    logger.info('WebSocket server ready for real-time detection');
 });

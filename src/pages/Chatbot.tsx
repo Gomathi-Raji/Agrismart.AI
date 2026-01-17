@@ -97,7 +97,11 @@ const LANGUAGES: LanguageConfig[] = [
 
 // Test function to debug API calls
 window.testGeminiAPI = async () => {
-  const apiKey = "AIzaSyDmcIzZ2SDSMAQuewlneQELBpxT4LrVr4g";
+  const apiKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+  if (!apiKey) {
+    console.warn('Gemini API key not configured (VITE_GEMINI_API_KEY)');
+    return;
+  }
   const testRequest = {
     contents: [
       { role: "user", parts: [{ text: "Hello, test message" }] }
@@ -202,8 +206,8 @@ export default function Chatbot() {
   const blobUrlsRef = useRef<Set<string>>(new Set()); // Track blob URLs for cleanup
 
   useEffect(() => {
-    const apiKey = "AIzaSyDmcIzZ2SDSMAQuewlneQELBpxT4LrVr4g";
-    console.log('Gemini API Key loaded:', apiKey ? `${apiKey.slice(0, 10)}...` : 'NOT LOADED');
+    const apiKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+    console.log('Gemini API Key loaded:', apiKey ? '***REDACTED***' : 'NOT LOADED');
     setGeminiApiKey(apiKey);
 
     // Initialize speech synthesis and load voices
