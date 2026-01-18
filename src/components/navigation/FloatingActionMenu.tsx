@@ -39,15 +39,6 @@ const quickActions: QuickAction[] = [
     description: "Diagnose crop issues instantly"
   },
   {
-    id: "marketplace",
-    title: "Buy Products",
-    path: "/buy",
-    icon: ShoppingCart,
-    color: "bg-green-500 hover:bg-green-600",
-    badge: "Buy",
-    description: "Buy crops & equipment"
-  },
-  {
     id: "sell",
     title: "Sell Products",
     path: "/sell",
@@ -102,7 +93,7 @@ export function FloatingActionMenu() {
   };
 
   return (
-    <div className="fixed bottom-20 md:bottom-8 right-4 z-40">
+    <div className="fixed bottom-32 md:bottom-24 right-4 z-40">
       {/* Quick Actions Menu */}
       {isOpen && (
         <Card className="absolute bottom-16 right-16 shadow-2xl border-0 bg-card/95 backdrop-blur-sm">
@@ -110,7 +101,6 @@ export function FloatingActionMenu() {
             <div className="space-y-2 w-64">
               <div className="text-center mb-3">
                 <h4 className="font-semibold text-sm text-foreground">Quick Actions</h4>
-                <p className="text-xs text-muted-foreground">Jump to any feature instantly</p>
               </div>
               
               {quickActions.map((action) => {
@@ -133,7 +123,7 @@ export function FloatingActionMenu() {
                       "w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm",
                       isCurrentPage ? "bg-primary/50" : action.color
                     )}>
-                      <IconComponent className="h-5 w-5" />
+                      <IconComponent className="h-6 w-6" />
                     </div>
                     
                     <div className="flex-1 min-w-0">
@@ -169,9 +159,9 @@ export function FloatingActionMenu() {
         onClick={() => setIsOpen(!isOpen)}
         size="lg"
         className={cn(
-          "h-14 w-14 rounded-full shadow-2xl",
+          "h-16 w-16 rounded-full",
           isOpen 
-            ? "bg-destructive hover:bg-destructive/90 rotate-45" 
+            ? "bg-destructive hover:bg-destructive/90" 
             : "bg-primary hover:bg-primary/90"
         )}
       >

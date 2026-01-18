@@ -229,15 +229,15 @@ export function MobileHeader() {
   const navItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "Diagnose", path: "/diagnose", icon: Camera },
+    { name: "Weather", path: "/weather", icon: Cloud },
+    { name: "Market Analysis", path: "/market-analysis", icon: TrendingUp },
     { name: "Buy", path: "/buy", icon: ShoppingCart },
     { name: "Sell", path: "/sell", icon: TrendingUp },
     { name: "Community", path: "/community", icon: Users },
-    { name: "Market Analysis", path: "/market-analysis", icon: TrendingUp },
+    { name: "News & Blogs", path: "/blogs", icon: MessageCircle },
     { name: "Recommendations", path: "/recommendations", icon: Sparkles },
     { name: "Government Schemes", path: "/government-schemes", icon: Users },
     { name: "Crops & Hybrids", path: "/hybrid", icon: Leaf },
-    { name: "News & Blogs", path: "/blogs", icon: MessageCircle },
-    { name: "Weather", path: "/weather", icon: Cloud },
     { name: "Support", path: "/support", icon: MessageCircle }
   ];
 
@@ -284,12 +284,6 @@ export function MobileHeader() {
               <Settings className="h-4 w-4" />
             </Button>
           </NotificationTestModal>
-          
-          {/* Cart */}
-          <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-            <ShoppingCart className="h-4 w-4" />
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></div>
-          </Button>
 
           {/* Compact Weather Widget */}
           <WeatherWidget />
