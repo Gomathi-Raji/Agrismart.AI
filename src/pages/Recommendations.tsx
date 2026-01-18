@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, MapPin, Sparkles, Leaf, Apple, Carrot, Thermometer, Droplets, Map, TrendingUp, BarChart3, PieChart, Activity, Target, Shield, Zap, Globe } from 'lucide-react';
 import { useWeather } from '@/hooks/useWeather';
 import { toast } from '@/hooks/use-toast';
+import { getOpenRouterApiKey, hasOpenRouterApiKey, getOpenRouterApiKeyName } from "@/utils/openRouterConfig";
 import type { WeatherData } from '@/services/weatherService';
 import { LocationMapSelector } from '@/components/LocationMapSelector';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line, PieChart as RechartsPieChart, Cell, AreaChart, Area } from 'recharts';
@@ -158,15 +159,24 @@ export default function Recommendations() {
     }
 
     // Check if API key is configured properly (not empty and not a placeholder)
-    const isApiKeyConfigured = geminiApiKey && 
+    const isGeminiConfigured = geminiApiKey && 
       geminiApiKey.trim() !== '' && 
       !geminiApiKey.includes('YOUR_') && 
       !geminiApiKey.includes('_HERE');
+    const isOpenRouterConfigured = hasOpenRouterApiKey('recommendations');
+    const isApiKeyConfigured = isGeminiConfigured || isOpenRouterConfigured;
+    
+    console.log('API Configuration:', {
+      isGeminiConfigured,
+      isOpenRouterConfigured,
+      isApiKeyConfigured,
+      openRouterKeyName: getOpenRouterApiKeyName('recommendations')
+    });
     
     if (!isApiKeyConfigured) {
       toast({
         title: "⚠️ API Key Missing",
-        description: "Please add your Gemini API key to the .env file (VITE_GEMINI_API_KEY) to get recommendations.",
+        description: `Please add ${getOpenRouterApiKeyName('recommendations')} or VITE_GEMINI_API_KEY to the .env file to get recommendations.`,
         variant: "destructive",
       });
       return;
@@ -179,42 +189,132 @@ export default function Recommendations() {
       
       const prompt = generateGeminiPrompt(location, weatherToUse, soilType);
       
-      console.log('Attempting to fetch from Gemini API...');
+      console.log('Attempting to fetch from AI API...');
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }]
-        }),
-      });
-
-      console.log('Response status:', response.status);
+      let aiResponse: string;
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Gemini API Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
+      // Prefer OpenRouter if configured, fallback to Gemini
+      if (isOpenRouterConfigured) {
+        console.log('Using OpenRouter API...');
+        const openRouterApiKey = getOpenRouterApiKey('recommendations');
+        console.log('OpenRouter API key configured:', !!openRouterApiKey);
+        console.log('OpenRouter API key starts with:', openRouterApiKey?.substring(0, 10));
+        
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openRouterApiKey}`,
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'AgriSmart Recommendations'
+          },
+          body: JSON.stringify({
+            model: 'anthropic/claude-3-haiku',
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 2000
+          }),
         });
-        throw new Error(`API Error ${response.status}: ${response.statusText}`);
-      }
 
-      const data = await response.json();
-      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      
-      console.log('Gemini API Response:', data);
-      console.log('AI Response Text:', aiResponse);
+        console.log('OpenRouter Response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('OpenRouter API Error:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          
+          // If OpenRouter fails, try Gemini as fallback
+          console.log('OpenRouter failed, trying Gemini as fallback...');
+          if (isGeminiConfigured) {
+            const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{
+                    text: prompt
+                  }]
+                }]
+              }),
+            });
+
+            console.log('Gemini Fallback Response status:', geminiResponse.status);
+            
+            if (!geminiResponse.ok) {
+              const geminiErrorText = await geminiResponse.text();
+              console.error('Gemini API Error:', {
+                status: geminiResponse.status,
+                statusText: geminiResponse.statusText,
+                body: geminiErrorText
+              });
+              throw new Error(`Both APIs failed. OpenRouter: ${response.status}, Gemini: ${geminiResponse.status}`);
+            }
+
+            const geminiData = await geminiResponse.json();
+            aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            console.log('Gemini API Response:', geminiData);
+            console.log('AI Response Text:', aiResponse);
+          } else {
+            throw new Error(`OpenRouter API Error ${response.status}: ${response.statusText}`);
+          }
+        } else {
+          const data = await response.json();
+          aiResponse = data.choices?.[0]?.message?.content;
+          
+          console.log('OpenRouter API Response:', data);
+          console.log('AI Response Text:', aiResponse);
+        }
+        
+      } else if (isGeminiConfigured) {
+        console.log('Using Gemini API...');
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
+            }]
+          }),
+        });
+
+        console.log('Gemini Response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Gemini API Error:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          throw new Error(`Gemini API Error ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        console.log('Gemini API Response:', data);
+        console.log('AI Response Text:', aiResponse);
+      } else {
+        throw new Error('No AI API configured');
+      }
       
       if (!aiResponse) {
-        throw new Error('No valid response from Gemini API');
+        throw new Error('No valid response from AI API');
       }
       
       // Parse AI response and structure it

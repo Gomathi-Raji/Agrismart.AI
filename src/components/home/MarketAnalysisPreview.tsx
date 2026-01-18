@@ -66,8 +66,6 @@ export function MarketAnalysisPreview() {
         setAnalysisData(response.analysis);
       } catch (err) {
         console.error('Failed to fetch market analysis:', err);
-        setError('Failed to load market data');
-        // Keep showing mock data as fallback
       } finally {
         setIsLoading(false);
       }

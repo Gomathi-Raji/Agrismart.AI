@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import Spline from '@splinetool/react-spline';
 import { toast } from "@/hooks/use-toast";
+import { getOpenRouterApiKey, hasOpenRouterApiKey, getOpenRouterApiKeyName } from "@/utils/openRouterConfig";
 
 // Types
 interface SpeechRecognitionEvent extends Event {
@@ -593,16 +594,18 @@ export default function Chatbot() {
     }
 
     // Check if API key is loaded and not a placeholder
-    const isApiKeyConfigured = geminiApiKey && 
+    const isGeminiConfigured = geminiApiKey && 
       geminiApiKey.trim() !== '' && 
       !geminiApiKey.includes('YOUR_') && 
       !geminiApiKey.includes('_HERE');
+    const isOpenRouterConfigured = hasOpenRouterApiKey('chatbot');
+    const isApiKeyConfigured = isGeminiConfigured || isOpenRouterConfigured;
     
     if (!isApiKeyConfigured) {
-      console.error('❌ Gemini API key not configured properly');
+      console.error('❌ No API key configured properly');
       toast({
         title: "⚠️ API Key Missing",
-        description: "Please add your Gemini API key to the .env file (VITE_GEMINI_API_KEY) to use the chatbot.",
+        description: `Please add ${getOpenRouterApiKeyName('chatbot')} or VITE_GEMINI_API_KEY to the .env file to use the chatbot.`,
         variant: "destructive"
       });
       return;

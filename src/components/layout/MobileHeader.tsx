@@ -238,8 +238,7 @@ export function MobileHeader() {
     { name: "Crops & Hybrids", path: "/hybrid", icon: Leaf },
     { name: "News & Blogs", path: "/blogs", icon: MessageCircle },
     { name: "Weather", path: "/weather", icon: Cloud },
-    { name: "Support", path: "/support", icon: MessageCircle },
-    { name: "Role Login", path: "/role-login", icon: Shield },
+    { name: "Support", path: "/support", icon: MessageCircle }
   ];
 
   return (

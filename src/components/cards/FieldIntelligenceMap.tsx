@@ -1003,7 +1003,7 @@ export const FieldIntelligenceMap: React.FC<FieldIntelligenceMapProps> = ({ clas
               )}
 
               {/* Weather Layers Controls */}
-              <div className="space-y-4">
+              <div className="space-y-4 hidden md:block">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Layers className="h-5 w-5 text-primary" />

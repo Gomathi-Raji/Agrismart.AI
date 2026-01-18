@@ -276,7 +276,7 @@ export function QuickActions({ userType = "farmer" }: QuickActionsProps) {
   const actions = getActions();
 
   return (
-    <Card className="shadow-elegant">
+    <Card className="bg-card shadow-elegant border border-border">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-primary" />
@@ -288,36 +288,29 @@ export function QuickActions({ userType = "farmer" }: QuickActionsProps) {
           {actions.map((action) => {
             const IconComponent = action.icon;
             return (
-              <Button
+              <Card 
                 key={action.id}
-                variant={action.variant || "outline"}
+                className="bg-card shadow-elegant border border-border hover:shadow-elegant-lg transition-all duration-200 cursor-pointer group"
                 onClick={() => handleActionClick(action)}
-                className={`h-auto p-4 flex flex-col items-center gap-3 relative ${
-                  action.featured ? "border-primary shadow-md" : ""
-                }`}
               >
-                {action.badge && (
-                  <Badge 
-                    variant="secondary" 
-                    className="absolute -top-2 -right-2 text-xs px-2 py-1"
-                  >
-                    {action.badge}
-                  </Badge>
-                )}
-                
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                  action.featured 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-accent text-foreground"
-                }`}>
-                  <IconComponent className="h-6 w-6" />
-                </div>
-                
-                <div className="text-center">
-                  <h4 className="font-medium text-sm mb-1">{action.title}</h4>
+                <CardContent className="p-4 text-center">
+                  {action.badge && (
+                    <Badge 
+                      variant="secondary" 
+                      className="mb-3 text-xs px-2 py-1"
+                    >
+                      {action.badge}
+                    </Badge>
+                  )}
+                  
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 dark:bg-primary/20 mb-3 group-hover:bg-primary/20 dark:group-hover:bg-primary/30 transition-colors">
+                    <IconComponent className="h-6 w-6 text-primary" />
+                  </div>
+                  
+                  <h4 className="font-semibold text-card-foreground text-sm mb-2">{action.title}</h4>
                   <p className="text-xs text-muted-foreground">{action.description}</p>
-                </div>
-              </Button>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

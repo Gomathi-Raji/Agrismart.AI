@@ -14,6 +14,7 @@ import {
 import { generateDiagnosisReport } from "@/utils/generatePDF";
 import { getAirQualityData, AirQualityData } from "@/services/airQualityService";
 import { getWeatherData, WeatherData } from "@/services/weatherService";
+import { getOpenRouterApiKey, hasOpenRouterApiKey, getOpenRouterApiKeyName } from "@/utils/openRouterConfig";
 import diseaseImage from "@/assets/crop-disease-detection.jpg";
 import aiDetectionImage from "@/assets/ai-detection.jpg";
 import neemOilImage from "@/assets/neem-oil-spray.jpg";
@@ -147,9 +148,9 @@ export default function Diagnose() {
 
   // Support both Gemini and OpenRouter APIs
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-  const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+  const OPENROUTER_API_KEY = getOpenRouterApiKey('diagnosis');
   const isGeminiConfigured = GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE';
-  const isOpenRouterConfigured = OPENROUTER_API_KEY && OPENROUTER_API_KEY !== 'YOUR_OPENROUTER_API_KEY_HERE';
+  const isOpenRouterConfigured = hasOpenRouterApiKey('diagnosis');
   const isApiConfigured = isGeminiConfigured || isOpenRouterConfigured;
 
   const productRecommendations = [
@@ -451,7 +452,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
     if (!isApiConfigured) {
       toast({
         title: "⚠️ API Key Missing",
-        description: "Please add VITE_OPENROUTER_API_KEY or VITE_GEMINI_API_KEY to the .env file",
+        description: `Please add ${getOpenRouterApiKeyName('diagnosis')} or VITE_GEMINI_API_KEY to the .env file`,
         variant: "destructive"
       });
       throw new Error('No API key configured.');
@@ -982,7 +983,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                   <p className="text-sm text-muted-foreground">
                     Capture well-lit images of leaves, stems, or fruits showing any discoloration, spots, or unusual growth
                   </p>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm">
+                  <div className="bg-card rounded-lg p-2 shadow-elegant">
                     <img
                       src={aiDetectionImage}
                       alt="Clear plant photo example"
@@ -999,7 +1000,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                   <p className="text-sm text-muted-foreground">
                     Upload your photo and let our AI analyze the plant health, identify diseases, and provide treatment recommendations
                   </p>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm">
+                  <div className="bg-card rounded-lg p-2 shadow-elegant">
                     <img
                       src={diseaseImage}
                       alt="AI analysis process"
@@ -1016,7 +1017,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                   <p className="text-sm text-muted-foreground">
                     Receive detailed treatment plans, organic solutions, and preventive measures to restore plant health and more insights.
                   </p>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm">
+                  <div className="bg-card rounded-lg p-2 shadow-elegant">
                     <img
                       src={recoveryImage}
                       alt="Treatment success"
@@ -1034,10 +1035,12 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                 </h4>
                 <div className="aspect-video w-full max-w-2xl mx-auto rounded-lg overflow-hidden shadow-lg">
                   <iframe
-                    src="https://www.youtube.com/embed/gKrNI5PIMeM?si=ctv1I2g9Xi27R8L1"
+                    src="https://www.youtube-nocookie.com/embed/gKrNI5PIMeM?rel=0&modestbranding=1"
                     title="How to Use Plant Health Diagnosis - Demo"
                     className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    loading="lazy"
                     allowFullScreen
                   ></iframe>
                 </div>
@@ -1118,23 +1121,23 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Natural Farming Banner */}
-                  <div className="bg-gradient-to-r from-green-100 via-emerald-100 to-teal-100 dark:from-green-950/50 dark:via-emerald-950/50 dark:to-teal-950/50 rounded-xl p-4 border border-green-200 dark:border-green-800">
+                  <div className="bg-card rounded-xl p-4 border shadow-elegant">
                     <div className="flex items-center justify-center gap-3 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <Leaf className="h-5 w-5 text-green-600" />
-                        <span className="font-semibold text-green-800 dark:text-green-200">100% Natural Recommendations</span>
+                        <Leaf className="h-5 w-5 text-primary" />
+                        <span className="font-semibold text-primary">100% Natural Recommendations</span>
                       </div>
-                      <Badge className="bg-green-600 text-white">Chemical-Free</Badge>
-                      <Badge className="bg-emerald-600 text-white">Organic Only</Badge>
-                      <Badge className="bg-teal-600 text-white">Eco-Friendly</Badge>
+                      <Badge className="bg-primary text-primary-foreground">Chemical-Free</Badge>
+                      <Badge className="bg-success text-success-foreground">Organic Only</Badge>
+                      <Badge className="bg-info text-info-foreground">Eco-Friendly</Badge>
                     </div>
-                    <p className="text-center text-sm text-green-700 dark:text-green-300 mt-2">
+                    <p className="text-center text-sm text-muted-foreground mt-2">
                       All treatment suggestions follow sustainable, traditional farming practices
                     </p>
                   </div>
 
                   {/* Quick Summary */}
-                  <div className="bg-muted/30 rounded-lg p-4 border">
+                  <div className="bg-card rounded-lg p-4 border shadow-elegant">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-lg">Diagnosis Summary</h3>
                       <Badge variant={
@@ -1171,12 +1174,12 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       {/* Visual Analytics Dashboard */}
                       {analysisResult.status !== 'error' && (
-                        <div className="space-y-6 bg-muted/20 rounded-lg p-6 border border-border">
+                        <div className="space-y-6 bg-card rounded-lg p-6 border shadow-elegant">
                           <h4 className="font-semibold text-lg flex items-center gap-2">
                             <TrendingUp className="h-5 w-5 text-primary" />
                             Visual Analytics
                           </h4>                      {/* Confidence Gauge */}
-                      <div className="bg-card rounded-lg p-4 border">
+                      <div className="bg-card rounded-lg p-4 border shadow-elegant">
                         <h5 className="font-medium mb-3 text-center">AI Confidence Level</h5>
                         <div className="flex justify-center">
                           <div className="relative w-32 h-32">
@@ -1208,7 +1211,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Symptoms Analysis Chart */}
                         {analysisResult.symptoms && analysisResult.symptoms.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Symptoms Distribution</h5>
                             <ResponsiveContainer width="100%" height={200}>
                               <PieChart>
@@ -1240,7 +1243,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                         {/* Treatment Timeline */}
                         {analysisResult.detailedTreatment?.stepByStepCure && analysisResult.detailedTreatment.stepByStepCure.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Treatment Timeline</h5>
                             <div className="space-y-3">
                               {analysisResult.detailedTreatment.stepByStepCure.map((step, index) => (
@@ -1265,7 +1268,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                         {/* Nutrient Balance Radar */}
                         {analysisResult.nutritionSuggestions && analysisResult.nutritionSuggestions.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Nutrient Balance Analysis</h5>
                             <ResponsiveContainer width="100%" height={250}>
                               <RadarChart data={analysisResult.nutritionSuggestions.map((nutrient, index) => ({
@@ -1291,7 +1294,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                         {/* Growth & Care Metrics */}
                         {(analysisResult.growthTips || analysisResult.seasonalCare) && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Care Recommendations</h5>
                             <div className="space-y-4">
                               {analysisResult.growthTips && analysisResult.growthTips.length > 0 && (
@@ -1326,7 +1329,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                         {/* Fertilizer Recommendations Chart */}
                         {analysisResult.fertilizers && analysisResult.fertilizers.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center flex items-center justify-center gap-2">
                               🌱 Natural Fertilizer Recommendations
                               <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">100% Organic</Badge>
@@ -1352,7 +1355,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                         {/* Prevention Tips Timeline */}
                         {analysisResult.preventionTips && analysisResult.preventionTips.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Prevention Strategy</h5>
                             <div className="space-y-3">
                               {analysisResult.preventionTips.slice(0, 4).map((tip, index) => (
@@ -1370,14 +1373,14 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       {/* Companion Plants Network */}
                       {analysisResult.companionPlants && analysisResult.companionPlants.length > 0 && (
-                        <div className="bg-muted/30 rounded-lg p-4 border">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-medium mb-3 text-center flex items-center justify-center gap-2">
                             <Heart className="h-4 w-4 text-primary" />
                             Companion Plants Network
                           </h5>
                           <div className="flex flex-wrap gap-2 justify-center">
                             {analysisResult.companionPlants.map((plant, index) => (
-                              <Badge key={index} variant="outline" className="bg-white dark:bg-gray-800">
+                              <Badge key={index} variant="outline">
                                 {plant}
                               </Badge>
                             ))}
@@ -1390,7 +1393,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       {/* Warning Signs Alert */}
                       {analysisResult.warningsSigns && analysisResult.warningsSigns.length > 0 && (
-                        <div className="bg-muted/30 rounded-lg p-4 border">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-semibold text-warning mb-3 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
                             Warning Signs to Watch For
@@ -1407,7 +1410,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                       )}
 
                       {/* Health Risk Assessment */}
-                      <div className="bg-muted/30 rounded-lg p-4 border">
+                      <div className="bg-card rounded-lg p-4 border shadow-elegant">
                         <h5 className="font-medium mb-3 text-center">Health Risk Assessment</h5>
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm">Overall Risk Level</span>
@@ -1455,7 +1458,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                         {/* AQI Gauge */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-medium mb-3 text-center">Air Quality Index</h5>
                           <div className="flex flex-col items-center">
                             <div className={`text-3xl font-bold mb-2 ${
@@ -1481,7 +1484,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                         </div>
 
                         {/* Pollutant Levels */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-medium mb-3 text-center">Key Pollutants</h5>
                           <div className="space-y-2">
                             {airQualityData.pollutants.pm25 !== undefined && (
@@ -1521,7 +1524,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                         </div>
 
                         {/* Emission Sources */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-medium mb-3 text-center">Emission Sources</h5>
                           <ResponsiveContainer width="100%" height={120}>
                             <PieChart>
@@ -1560,7 +1563,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                       </div>
 
                       {/* Environmental Impact on Plant Health */}
-                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                      <div className="bg-card rounded-lg p-4 border shadow-elegant">
                         <h5 className="font-medium mb-3 text-center">Environmental Impact Assessment</h5>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
@@ -1745,7 +1748,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                   )}
 
                   {/* Next Steps */}
-                  <div className="bg-muted/30 rounded-lg p-4 border">
+                  <div className="bg-card rounded-lg p-4 border shadow-elegant">
                     <h4 className="font-semibold text-primary mb-3 flex items-center gap-2">
                       <AlertCircle className="h-4 w-4" />
                       Recommended Actions
@@ -1819,7 +1822,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       {/* Growth Tips */}
                       {analysisResult.growthTips?.length > 0 && (
-                        <div className="bg-success/10 border border-success/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-success mb-3 flex items-center gap-2">
                             <TrendingUp className="h-4 w-4" />
                             Growth Enhancement Tips
@@ -1843,7 +1846,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       {/* Seasonal Care */}
                       {analysisResult.seasonalCare?.length > 0 && (
-                        <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-info mb-3 flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             Seasonal Care Guide
@@ -1861,7 +1864,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       {/* Companion Plants */}
                       {analysisResult.companionPlants?.length > 0 && (
-                        <div className="bg-accent/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold mb-3 flex items-center gap-2">
                             <Leaf className="h-4 w-4" />
                             Great Companion Plants
@@ -1896,7 +1899,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                       </motion.div>
 
                       {/* Error Details */}
-                      <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                      <div className="bg-card border shadow-elegant rounded-lg p-4">
                         <h5 className="font-semibold text-warning mb-3 flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
                           What Happened?
@@ -1908,7 +1911,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                       </div>
 
                       {/* Solutions */}
-                      <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+                      <div className="bg-card border shadow-elegant rounded-lg p-4">
                         <h5 className="font-semibold text-info mb-3 flex items-center gap-2">
                           <CheckCircle className="h-4 w-4" />
                           What You Can Do
@@ -1934,7 +1937,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                     <div className="space-y-6">
                       {/* Symptoms */}
                       {analysisResult.symptoms?.length > 0 && (
-                        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-destructive mb-3 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
                             Symptoms Identified
@@ -1952,7 +1955,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       {/* Immediate Actions */}
                       {analysisResult.immediateActions?.length > 0 && (
-                        <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-warning mb-3 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
                             Immediate Actions Required
@@ -1973,7 +1976,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                         <div className="space-y-4">
                           {/* Organic Solutions */}
                           {analysisResult.detailedTreatment.organicSolutions?.length > 0 && (
-                            <div className="bg-success/10 border border-success/20 rounded-lg p-4">
+                            <div className="bg-card border shadow-elegant rounded-lg p-4">
                               <h5 className="font-semibold text-success mb-3 flex items-center gap-2">
                                 <Leaf className="h-4 w-4" />
                                 Organic Treatment Options
@@ -1991,7 +1994,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                           {/* Chemical Solutions */}
                           {analysisResult.detailedTreatment.naturalRemedies?.length > 0 && (
-                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                            <div className="bg-card border shadow-elegant rounded-lg p-4">
                               <h5 className="font-semibold text-amber-700 dark:text-amber-300 mb-3 flex items-center gap-2">
                                 <Sparkles className="h-4 w-4" />
                                 🌿 Traditional Home Remedies
@@ -2012,7 +2015,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                           {/* Step by Step Cure */}
                           {analysisResult.detailedTreatment.stepByStepCure?.length > 0 && (
-                            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                            <div className="bg-card border shadow-elegant rounded-lg p-4">
                               <h5 className="font-semibold text-primary mb-3 flex items-center gap-2">
                                 <CheckCircle className="h-4 w-4" />
                                 Step-by-Step Treatment Plan
@@ -2034,7 +2037,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                       {/* Prevention Tips */}
                       {analysisResult.preventionTips?.length > 0 && (
-                        <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-info mb-3 flex items-center gap-2">
                             <Shield className="h-4 w-4" />
                             Prevention Strategies
@@ -2056,7 +2059,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                   <div className="space-y-4">
                     {/* Fertilizers */}
                     {analysisResult.fertilizers?.length > 0 && (
-                      <div className="bg-accent/20 rounded-lg p-4">
+                      <div className="bg-card border shadow-elegant rounded-lg p-4">
                         <h5 className="font-semibold mb-3 flex items-center gap-2">
                           <TrendingUp className="h-4 w-4" />
                           Recommended Fertilizers
@@ -2084,7 +2087,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
 
                     {/* Nutrition Suggestions */}
                     {analysisResult.nutritionSuggestions?.length > 0 && (
-                      <div className="bg-success/10 border border-success/20 rounded-lg p-4">
+                      <div className="bg-card border shadow-elegant rounded-lg p-4">
                         <h5 className="font-semibold text-success mb-3 flex items-center gap-2">
                           <Heart className="h-4 w-4" />
                           Nutrition Guide
@@ -2159,7 +2162,7 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                         <motion.div
                           key={product.id}
                           whileHover={{ scale: 1.03, y: -4 }}
-                          className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4 space-y-3 shadow-sm hover:shadow-lg transition-all"
+                          className="bg-card border shadow-elegant rounded-xl p-4 space-y-3"
                         >
                           <div className="relative">
                             <img
@@ -2167,21 +2170,21 @@ Be detailed and practical. Focus on actionable NATURAL advice that farmers can i
                               alt={product.name}
                               className="w-full h-28 object-cover rounded-lg"
                             />
-                            <Badge className="absolute top-2 right-2 bg-green-600 text-white text-xs">
+                            <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs">
                               <Leaf className="h-3 w-3 mr-1" />
                               Organic
                             </Badge>
                           </div>
-                          <h6 className="font-semibold text-sm text-green-800 dark:text-green-200">{product.name}</h6>
+                          <h6 className="font-semibold text-sm text-foreground">{product.name}</h6>
                           <p className="text-xs text-muted-foreground">{product.description}</p>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                               <span className="text-xs font-medium">{product.rating}</span>
                             </div>
-                            <span className="font-bold text-green-700 dark:text-green-300">{product.price}</span>
+                            <span className="font-bold text-primary">{product.price}</span>
                           </div>
-                          <Button size="sm" className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
+                          <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                             <ShoppingCart className="h-3 w-3 mr-1" />
                             Shop Natural
                           </Button>
