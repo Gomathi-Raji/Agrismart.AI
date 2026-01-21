@@ -181,10 +181,17 @@ The project uses a design system approach:
 ## 🔧 Configuration
 
 ### Environment Variables
-The project doesn't use traditional env files. Instead:
-- Clerk publishable key is set directly in `main.tsx`
-- API endpoints are configured in service files
-- Feature flags can be added to context providers
+This project uses environment variables for third-party services.
+
+- Copy `.env.example` to `.env` and fill in your values.
+- Never commit `.env` (it is ignored via `.gitignore`). Use your CI/CD or hosting provider's secret store in production.
+
+Example:
+```bash
+cp .env.example .env
+```
+
+Frontend keys must be prefixed with `VITE_` to be available in the Vite app.
 
 ### API Integration
 - Weather data: OpenMeteo API

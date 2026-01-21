@@ -1,5 +1,6 @@
 import { fetchWeatherApi } from 'openmeteo';
 import { weatherCache } from '../utils/weatherCache';
+import { config } from '../lib/config';
 
 // Weather condition mappings for better UX
 export interface WeatherData {
@@ -224,9 +225,8 @@ export const getCurrentLocation = (): Promise<LocationData> => {
         
         try {
           // Use Mapbox reverse geocoding for better accuracy
-          const MAPBOX_API_KEY = 'pk.eyJ1IjoiaGFyaXNod2FyYW4iLCJhIjoiY21hZHhwZGs2MDF4YzJxczh2aDd0cWg1MyJ9.qcu0lpqVlZlC2WFxhwb1Pg';
           const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_API_KEY}`
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${config.MAPBOX_API_KEY}`
           );
           const data = await response.json();
           const feature = data.features?.[0];

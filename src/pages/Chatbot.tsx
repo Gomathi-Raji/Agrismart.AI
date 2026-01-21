@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import Spline from '@splinetool/react-spline';
 import { toast } from "@/hooks/use-toast";
+import { getOpenRouterApiKey, hasOpenRouterApiKey, getOpenRouterApiKeyName } from "@/utils/openRouterConfig";
 
 // Types
 interface SpeechRecognitionEvent extends Event {
@@ -60,10 +61,10 @@ interface GeminiMessagePart {
 declare global {
   interface Window {
     webkitSpeechRecognition: new () => SpeechRecognition;
-    testGeminiAPI?: () => Promise<void>;
+    testGeminiAPI?: () => Promise<unknown>;
     testVoices?: () => void;
     testVoice?: (text?: string, voiceIndex?: number) => void;
-    testFileUpload?: () => Promise<void>;
+    testFileUpload?: () => Promise<unknown>;
   }
 }
 
@@ -97,7 +98,11 @@ const LANGUAGES: LanguageConfig[] = [
 
 // Test function to debug API calls
 window.testGeminiAPI = async () => {
-  const apiKey = "AIzaSyDmcIzZ2SDSMAQuewlneQELBpxT4LrVr4g";
+  const apiKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+  if (!apiKey) {
+    console.warn('Gemini API key not configured (VITE_GEMINI_API_KEY)');
+    return;
+  }
   const testRequest = {
     contents: [
       { role: "user", parts: [{ text: "Hello, test message" }] }
@@ -195,15 +200,15 @@ export default function Chatbot() {
   const [languageChanging, setLanguageChanging] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const controllerRef = useRef<AbortController | null>(null);
-  const recognitionRef = useRef<WebkitSpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const blobUrlsRef = useRef<Set<string>>(new Set()); // Track blob URLs for cleanup
 
   useEffect(() => {
-    const apiKey = "AIzaSyDmcIzZ2SDSMAQuewlneQELBpxT4LrVr4g";
-    console.log('Gemini API Key loaded:', apiKey ? `${apiKey.slice(0, 10)}...` : 'NOT LOADED');
+    const apiKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+    console.log('Gemini API Key loaded:', apiKey ? '***REDACTED***' : 'NOT LOADED');
     setGeminiApiKey(apiKey);
 
     // Initialize speech synthesis and load voices
@@ -588,14 +593,26 @@ export default function Chatbot() {
       return;
     }
 
-    // Check if API key is loaded
-    if (!geminiApiKey) {
-      console.error('❌ Gemini API key not loaded');
+    // Check if API key is loaded and not a placeholder
+    const isGeminiConfigured = geminiApiKey && 
+      geminiApiKey.trim() !== '' && 
+      !geminiApiKey.includes('YOUR_') && 
+      !geminiApiKey.includes('_HERE');
+    const isOpenRouterConfigured = hasOpenRouterApiKey('chatbot');
+    const isApiKeyConfigured = isGeminiConfigured || isOpenRouterConfigured;
+    
+    if (!isApiKeyConfigured) {
+      console.error('❌ No API key configured properly');
+      toast({
+        title: "⚠️ API Key Missing",
+        description: `Please add ${getOpenRouterApiKeyName('chatbot')} or VITE_GEMINI_API_KEY to the .env file to use the chatbot.`,
+        variant: "destructive"
+      });
       return;
     }
 
-    const userMsg = text.trim() || (currentFiles.length > 0 ? "Please analyze the uploaded file(s) and provide detailed insights about plant health, diseases, or agricultural information." : "");
     const currentFiles = [...uploadedFiles];
+    const userMsg = text.trim() || (currentFiles.length > 0 ? "Please analyze the uploaded file(s) and provide detailed insights about plant health, diseases, or agricultural information." : "");
     
     console.log('✅ Starting sendToGemini with:', { userMsg, fileCount: currentFiles.length, apiKey: geminiApiKey.slice(0, 10) + '...' });
     

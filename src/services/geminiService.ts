@@ -22,7 +22,7 @@ interface CropHealthData {
   immediateActions: string[];
   detailedTreatment: {
     organicSolutions: unknown[];
-    chemicalSolutions: unknown[];
+    naturalRemedies: unknown[];
     stepByStepCure: unknown[];
   };
   fertilizers: unknown[];

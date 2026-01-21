@@ -79,15 +79,15 @@ export function QuickActionsGrid() {
             return (
               <Card 
                 key={action.id}
-                className="col-span-2 lg:col-span-1 bg-gradient-to-br from-primary to-primary/80 dark:from-primary dark:to-primary/90 border-0 hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                className="col-span-2 lg:col-span-1 bg-card shadow-elegant border border-border hover:shadow-elegant-lg transition-all duration-300 cursor-pointer group"
                 onClick={() => navigate(action.route)}
               >
                 <CardContent className="p-6 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/20 dark:bg-white/10 mb-4 group-hover:scale-110 transition-transform">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 dark:bg-primary/20 mb-4 group-hover:bg-primary/20 dark:group-hover:bg-primary/30 transition-colors">
                     <span className="text-2xl">{action.emoji}</span>
                   </div>
-                  <h3 className="font-bold text-primary-foreground mb-1">{action.title}</h3>
-                  <p className="text-sm text-primary-foreground/80 dark:text-primary-foreground/90">{action.description}</p>
+                  <h3 className="font-bold text-card-foreground mb-1">{action.title}</h3>
+                  <p className="text-sm text-muted-foreground">{action.description}</p>
                 </CardContent>
               </Card>
             );
@@ -96,11 +96,14 @@ export function QuickActionsGrid() {
           return (
             <Card 
               key={action.id}
-              className="bg-card dark:bg-card hover:bg-accent/50 dark:hover:bg-accent/20 border border-border dark:border-border hover:shadow-md transition-all duration-200 cursor-pointer group"
+              className={cn(
+                "bg-card shadow-elegant border border-border hover:shadow-elegant-lg transition-all duration-200 cursor-pointer group",
+                action.id === "support" && "hidden md:block"
+              )}
               onClick={() => navigate(action.route)}
             >
               <CardContent className="p-4 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-muted dark:bg-muted/50 mb-3 group-hover:scale-105 transition-transform">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 dark:bg-primary/20 mb-3 group-hover:bg-primary/20 dark:group-hover:bg-primary/30 transition-colors">
                   <span className="text-lg">{action.emoji}</span>
                 </div>
                 <h3 className="font-semibold text-card-foreground text-sm mb-1">{action.title}</h3>

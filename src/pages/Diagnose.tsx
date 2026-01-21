@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 import { 
   Camera, Upload, Scan, AlertCircle, CheckCircle, 
   Award, Share2, Bookmark, ShoppingCart, Star, 
@@ -13,6 +14,7 @@ import {
 import { generateDiagnosisReport } from "@/utils/generatePDF";
 import { getAirQualityData, AirQualityData } from "@/services/airQualityService";
 import { getWeatherData, WeatherData } from "@/services/weatherService";
+import { getOpenRouterApiKey, hasOpenRouterApiKey, getOpenRouterApiKeyName } from "@/utils/openRouterConfig";
 import diseaseImage from "@/assets/crop-disease-detection.jpg";
 import aiDetectionImage from "@/assets/ai-detection.jpg";
 import neemOilImage from "@/assets/neem-oil-spray.jpg";
@@ -50,12 +52,12 @@ interface PlantAnalysisResult {
   immediateActions: string[];
   detailedTreatment: {
     organicSolutions: string[];
-    chemicalSolutions: string[];
+    naturalRemedies: string[];
     stepByStepCure: string[];
   };
   fertilizers: Array<{
     name: string;
-    type: 'organic' | 'chemical';
+    type: 'organic' | 'natural';
     application: string;
     timing: string;
   }>;
@@ -144,7 +146,12 @@ export default function Diagnose() {
   const [visibleSymptoms, setVisibleSymptoms] = useState('');
   const [environmentalFactors, setEnvironmentalFactors] = useState('');
 
+  // Support both Gemini and OpenRouter APIs
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+  const OPENROUTER_API_KEY = getOpenRouterApiKey('diagnosis');
+  const isGeminiConfigured = GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE';
+  const isOpenRouterConfigured = hasOpenRouterApiKey('diagnosis');
+  const isApiConfigured = isGeminiConfigured || isOpenRouterConfigured;
 
   const productRecommendations = [
     {
@@ -153,23 +160,23 @@ export default function Diagnose() {
       price: "$24.99",
       rating: 4.8,
       image: neemOilImage,
-      description: "Natural fungicide for plant diseases"
+      description: "100% natural fungicide & pest repellent"
     },
     {
       id: 2,
-      name: "NPK Fertilizer",
+      name: "Organic Compost Blend",
       price: "$18.99",
       rating: 4.6,
       image: fertilizerImage,
-      description: "Balanced nutrients for healthy growth"
+      description: "Rich organic nutrients for soil health"
     },
     {
       id: 3,
-      name: "Disease Recovery Kit",
+      name: "Natural Recovery Kit",
       price: "$32.99",
       rating: 4.9,
       image: recoveryImage,
-      description: "Complete treatment for common diseases"
+      description: "Herbal & organic disease treatment"
     }
   ];
 
@@ -279,18 +286,9 @@ export default function Diagnose() {
     });
   };
 
-  const analyzeImageWithGemini = async (imageBase64: string, metadata?: AnalysisMetadata) => {
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: `As an expert agricultural AI specializing in plant disease diagnosis, analyze this plant/leaf image with the following context:
+  // Build the analysis prompt
+  const buildAnalysisPrompt = (metadata?: AnalysisMetadata) => {
+    return `As an expert agricultural AI specializing in plant disease diagnosis, analyze this plant/leaf image with the following context:
 
 **Context Information:**
 - Location: ${metadata?.location || 'Auto-detected location (Chennai fallback)'} (automatically detected)
@@ -313,20 +311,12 @@ ${metadata?.weather ? `
 - Weather Condition: ${metadata.weather.current.weatherCode}
 - Location: ${metadata.weather.location.latitude}°N, ${metadata.weather.location.longitude}°E (Elevation: ${metadata.weather.location.elevation}m)` : ''}
 
-**Analysis Approach:**
-- Plant type and symptoms will be identified from the image analysis
-- Use air quality data to assess environmental stress factors on plant health
-- Provide comprehensive diagnosis based on visual analysis and environmental context
-
-**Few-Shot Examples:**
-
-Example 1 - Tomato with Late Blight:
-Input: Tomato plant in humid coastal area, dark spots on leaves, wet weather
-Expected: {"status": "diseased", "plantType": "Tomato (Solanum lycopersicum)", "confidence": 95, "disease": "Late Blight (Phytophthora infestans)", "severity": "severe", ...}
-
-Example 2 - Healthy Corn:
-Input: Corn plant in dry field, no visible issues, regular irrigation
-Expected: {"status": "healthy", "plantType": "Corn (Zea mays)", "confidence": 88, "disease": null, ...}
+**IMPORTANT: NATURAL & ORGANIC ONLY**
+We promote sustainable, chemical-free farming. ALL recommendations must be:
+- 100% natural and organic - NO synthetic chemicals, pesticides, or artificial fertilizers
+- Traditional remedies like neem oil, garlic spray, turmeric, ash, cow dung, vermicompost
+- Biological controls, companion planting, and integrated pest management
+- Home-made solutions using kitchen ingredients (baking soda, soap, vinegar)
 
 **Task:** Provide a comprehensive analysis in JSON format with the following structure:
 
@@ -337,17 +327,17 @@ Expected: {"status": "healthy", "plantType": "Corn (Zea mays)", "confidence": 88
   "disease": "specific disease name if diseased, null if healthy",
   "severity": "mild/moderate/severe if diseased, null if healthy",
   "symptoms": ["list of visible symptoms"],
-  "immediateActions": ["urgent steps to take"],
+  "immediateActions": ["urgent natural steps to take"],
   "detailedTreatment": {
-    "organicSolutions": ["natural treatment methods"],
-    "chemicalSolutions": ["chemical treatments if needed"],
-    "stepByStepCure": ["detailed cure process"]
+    "organicSolutions": ["organic treatment methods like neem oil, compost tea"],
+    "naturalRemedies": ["traditional home remedies like turmeric paste, garlic spray, wood ash"],
+    "stepByStepCure": ["detailed natural cure process"]
   },
   "fertilizers": [
     {
-      "name": "fertilizer name",
-      "type": "organic/chemical",
-      "application": "how to apply",
+      "name": "organic fertilizer name (e.g., vermicompost, bone meal, seaweed extract)",
+      "type": "organic or natural ONLY - never chemical",
+      "application": "how to apply naturally",
       "timing": "when to apply"
     }
   ],
@@ -355,45 +345,130 @@ Expected: {"status": "healthy", "plantType": "Corn (Zea mays)", "confidence": 88
     {
       "nutrient": "nutrient name",
       "deficiencySign": "signs of deficiency",
-      "sources": ["natural sources"]
+      "sources": ["natural organic sources like compost, manure, green manure"]
     }
   ],
-  "preventionTips": ["long-term prevention strategies"],
-  "growthTips": ["tips for better growth - always include even for diseased plants"],
-  "seasonalCare": ["seasonal care recommendations"],
-  "companionPlants": ["plants that grow well together"],
+  "preventionTips": ["long-term organic prevention strategies"],
+  "growthTips": ["natural tips for better growth - always include even for diseased plants"],
+  "seasonalCare": ["seasonal organic care recommendations"],
+  "companionPlants": ["plants that naturally repel pests and grow well together"],
   "warningsSigns": ["signs to watch for"],
-  "appreciation": "encouraging message for the farmer",
-  "additionalAdvice": "any extra recommendations"
+  "appreciation": "encouraging message for the farmer practicing natural farming",
+  "additionalAdvice": "recommendations for sustainable organic practices"
 }
 
-Be detailed and practical. Focus on actionable advice that farmers can implement. Use the context information to improve accuracy and specificity.`
-              },
-              {
-                inline_data: {
-                  mime_type: "image/jpeg",
-                  data: imageBase64.split(',')[1]
-                }
+Be detailed and practical. Focus on actionable NATURAL advice that farmers can implement without buying synthetic products.`;
+  };
+
+  // Analyze image using OpenRouter API (supports vision models like Claude, GPT-4V)
+  const analyzeWithOpenRouter = async (imageBase64: string, metadata?: AnalysisMetadata) => {
+    const prompt = buildAnalysisPrompt(metadata);
+    
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'AgriSmart Plant Diagnosis'
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-001',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { 
+                type: 'image_url', 
+                image_url: { 
+                  url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+                } 
               }
             ]
-          }]
-        })
-      });
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7
+      })
+    });
 
-      const data = await response.json();
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('OpenRouter API error:', data.error);
+      throw new Error(data.error.message || 'OpenRouter API error');
+    }
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid OpenRouter response:', data);
+      throw new Error('Invalid response from OpenRouter API');
+    }
+    
+    return data.choices[0].message.content;
+  };
+
+  // Analyze image using Gemini API
+  const analyzeWithGemini = async (imageBase64: string, metadata?: AnalysisMetadata) => {
+    const prompt = buildAnalysisPrompt(metadata);
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: imageBase64.split(',')[1]
+              }
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      console.error('Invalid Gemini API response:', data);
       
-      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-        console.error('Invalid API response structure:', data);
-        
-        // Check for quota exceeded error
-        if (data.error && data.error.code === 429) {
-          throw new Error(`API Quota Exceeded: The Gemini API quota has been reached. Please try again later or contact support to increase your quota limits.`);
-        }
-        
-        throw new Error(`Invalid response from Gemini API: ${JSON.stringify(data)}`);
+      if (data.error && data.error.code === 429) {
+        throw new Error('API Quota Exceeded: Please try again later.');
       }
+      
+      throw new Error(`Invalid response from Gemini API: ${JSON.stringify(data)}`);
+    }
+    
+    return data.candidates[0].content.parts[0].text;
+  };
 
-      const analysisText = data.candidates[0].content.parts[0].text;
+  const analyzeImageWithGemini = async (imageBase64: string, metadata?: AnalysisMetadata) => {
+    // Check if any API key is configured
+    if (!isApiConfigured) {
+      toast({
+        title: "⚠️ API Key Missing",
+        description: `Please add ${getOpenRouterApiKeyName('diagnosis')} or VITE_GEMINI_API_KEY to the .env file`,
+        variant: "destructive"
+      });
+      throw new Error('No API key configured.');
+    }
+
+    try {
+      let analysisText: string;
+      
+      // Prefer OpenRouter if configured, fallback to Gemini
+      if (isOpenRouterConfigured) {
+        console.log('🔄 Using OpenRouter API for analysis...');
+        analysisText = await analyzeWithOpenRouter(imageBase64, metadata);
+      } else {
+        console.log('🔄 Using Gemini API for analysis...');
+        analysisText = await analyzeWithGemini(imageBase64, metadata);
+      }
       
       // Clean up the response text (remove markdown formatting if present)
       const cleanedText = analysisText.replace(/```json\n?|\n?```/g, '').trim();
@@ -412,7 +487,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
           immediateActions: parsedResult.immediateActions || [],
           detailedTreatment: parsedResult.detailedTreatment || {
             organicSolutions: [],
-            chemicalSolutions: [],
+            naturalRemedies: [],
             stepByStepCure: []
           },
           fertilizers: parsedResult.fertilizers || [],
@@ -422,12 +497,12 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
           seasonalCare: parsedResult.seasonalCare || [],
           companionPlants: parsedResult.companionPlants || [],
           warningsSigns: parsedResult.warningsSigns || [],
-          appreciation: parsedResult.appreciation || "Thank you for taking care of your plants!",
+          appreciation: parsedResult.appreciation || "Thank you for practicing natural farming!",
           additionalAdvice: parsedResult.additionalAdvice || ""
         };
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
-        // Return enhanced fallback data
+        // Return enhanced fallback data - 100% organic
         return {
           status: "diseased",
           plantType: "Unknown plant",
@@ -435,23 +510,29 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
           disease: "Possible fungal infection",
           severity: "moderate",
           symptoms: ["Discoloration visible on leaves", "Potential spotting patterns"],
-          immediateActions: ["Remove affected leaves", "Improve air circulation", "Reduce watering frequency"],
+          immediateActions: ["Remove affected leaves carefully", "Improve air circulation around plants", "Reduce watering frequency"],
           detailedTreatment: {
-            organicSolutions: ["Apply neem oil spray", "Use baking soda solution", "Improve soil drainage"],
-            chemicalSolutions: ["Copper-based fungicide", "Systemic fungicide for severe cases"],
+            organicSolutions: ["Apply diluted neem oil spray (2ml per liter)", "Use baking soda solution (1 tsp per liter)", "Apply garlic-chili spray for pest control"],
+            naturalRemedies: ["Turmeric paste on wounds", "Wood ash around base", "Cow urine diluted 1:10 as foliar spray", "Buttermilk spray for fungal issues"],
             stepByStepCure: [
-              "Remove all affected plant parts",
-              "Apply organic treatment every 3-4 days",
-              "Monitor for 2 weeks",
-              "Switch to chemical treatment if no improvement"
+              "Remove all affected plant parts and burn them",
+              "Apply neem oil spray every 3-4 days",
+              "Add vermicompost to strengthen plant immunity",
+              "Monitor for 2 weeks and repeat treatment if needed"
             ]
           },
           fertilizers: [
             {
-              name: "Balanced NPK Fertilizer",
-              type: "chemical",
-              application: "Dilute and apply to soil",
+              name: "Vermicompost",
+              type: "organic",
+              application: "Mix 500g around plant base",
               timing: "Every 2-3 weeks during growing season"
+            },
+            {
+              name: "Jeevamrit (fermented organic culture)",
+              type: "natural",
+              application: "Dilute 1:10 and apply to soil",
+              timing: "Weekly during active growth"
             }
           ],
           nutritionSuggestions: [
@@ -461,13 +542,13 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
               sources: ["Compost", "Fish emulsion", "Blood meal"]
             }
           ],
-          preventionTips: ["Ensure proper spacing between plants", "Water at soil level", "Regular inspection"],
-          growthTips: ["Provide adequate sunlight", "Maintain consistent watering", "Use quality soil"],
-          seasonalCare: ["Adjust watering based on season", "Provide protection during extreme weather"],
-          companionPlants: ["Marigolds", "Basil", "Chives"],
+          preventionTips: ["Ensure proper spacing between plants", "Water at soil level", "Regular inspection", "Practice crop rotation"],
+          growthTips: ["Provide adequate sunlight", "Maintain consistent watering", "Use organic compost for soil health"],
+          seasonalCare: ["Adjust watering based on season", "Use mulching to retain moisture"],
+          companionPlants: ["Marigolds (pest repellent)", "Basil", "Chives", "Lemongrass"],
           warningsSigns: ["Wilting", "Unusual discoloration", "Pest presence"],
-          appreciation: "Great job monitoring your plant's health! Early detection is key to successful treatment.",
-          additionalAdvice: "Consider consulting with local agricultural extension services for region-specific advice."
+          appreciation: "Great job practicing natural farming! Early detection is key to successful organic treatment.",
+          additionalAdvice: "Continue using natural methods - they work best when applied consistently. Consult local organic farming communities for region-specific traditional remedies."
         };
       }
     } catch (error) {
@@ -485,7 +566,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
           immediateActions: ["Please try again later", "Contact support for quota increase"],
           detailedTreatment: {
             organicSolutions: [],
-            chemicalSolutions: [],
+            naturalRemedies: [],
             stepByStepCure: []
           },
           fertilizers: [],
@@ -500,7 +581,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
         };
       }
       
-      // Return comprehensive fallback data for other errors
+      // Return comprehensive fallback data for other errors - 100% organic
       return {
         status: "healthy",
         plantType: "Healthy plant",
@@ -511,15 +592,21 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
         immediateActions: [],
         detailedTreatment: {
           organicSolutions: [],
-          chemicalSolutions: [],
+          naturalRemedies: [],
           stepByStepCure: []
         },
         fertilizers: [
           {
-            name: "Organic Compost",
+            name: "Vermicompost",
             type: "organic",
             application: "Mix into soil around the base",
             timing: "Monthly during growing season"
+          },
+          {
+            name: "Kitchen Compost",
+            type: "natural",
+            application: "Layer around plants as mulch",
+            timing: "Every 2 weeks"
           }
         ],
         nutritionSuggestions: [
@@ -623,6 +710,15 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
     const result = await analyzeImageWithGemini(enhancedImage, metadata);
 
+    // Show toast if API quota exceeded
+    if (result.status === 'error' && result.symptoms?.includes('API quota exceeded')) {
+      toast({
+        title: "⏳ API Quota Exceeded",
+        description: "Please wait a few minutes before trying again. The free tier has limited requests.",
+        variant: "destructive"
+      });
+    }
+
     setAnalysisResult(result);
     setIsAnalyzing(false);
   };  const saveDiagnosis = () => {
@@ -657,10 +753,10 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
               <Leaf className="h-8 w-8" />
             </motion.div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2">
-              AI Plant Health Lab
+              🌿 Natural Plant Health Lab
             </h1>
             <p className="text-primary-foreground/90 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-              Advanced crop disease detection with real-time AI analysis powered by environmental data
+              AI-powered disease detection with <span className="font-semibold">100% natural & organic</span> treatment recommendations
             </p>
           </div>
         </div>
@@ -887,7 +983,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                   <p className="text-sm text-muted-foreground">
                     Capture well-lit images of leaves, stems, or fruits showing any discoloration, spots, or unusual growth
                   </p>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm">
+                  <div className="bg-card rounded-lg p-2 shadow-elegant">
                     <img
                       src={aiDetectionImage}
                       alt="Clear plant photo example"
@@ -904,7 +1000,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                   <p className="text-sm text-muted-foreground">
                     Upload your photo and let our AI analyze the plant health, identify diseases, and provide treatment recommendations
                   </p>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm">
+                  <div className="bg-card rounded-lg p-2 shadow-elegant">
                     <img
                       src={diseaseImage}
                       alt="AI analysis process"
@@ -921,7 +1017,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                   <p className="text-sm text-muted-foreground">
                     Receive detailed treatment plans, organic solutions, and preventive measures to restore plant health and more insights.
                   </p>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm">
+                  <div className="bg-card rounded-lg p-2 shadow-elegant">
                     <img
                       src={recoveryImage}
                       alt="Treatment success"
@@ -939,10 +1035,12 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                 </h4>
                 <div className="aspect-video w-full max-w-2xl mx-auto rounded-lg overflow-hidden shadow-lg">
                   <iframe
-                    src="https://www.youtube.com/embed/gKrNI5PIMeM"
+                    src="https://www.youtube-nocookie.com/embed/gKrNI5PIMeM?rel=0&modestbranding=1"
                     title="How to Use Plant Health Diagnosis - Demo"
                     className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    loading="lazy"
                     allowFullScreen
                   ></iframe>
                 </div>
@@ -1022,8 +1120,24 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Natural Farming Banner */}
+                  <div className="bg-card rounded-xl p-4 border shadow-elegant">
+                    <div className="flex items-center justify-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <Leaf className="h-5 w-5 text-primary" />
+                        <span className="font-semibold text-primary">100% Natural Recommendations</span>
+                      </div>
+                      <Badge className="bg-primary text-primary-foreground">Chemical-Free</Badge>
+                      <Badge className="bg-success text-success-foreground">Organic Only</Badge>
+                      <Badge className="bg-info text-info-foreground">Eco-Friendly</Badge>
+                    </div>
+                    <p className="text-center text-sm text-muted-foreground mt-2">
+                      All treatment suggestions follow sustainable, traditional farming practices
+                    </p>
+                  </div>
+
                   {/* Quick Summary */}
-                  <div className="bg-muted/30 rounded-lg p-4 border">
+                  <div className="bg-card rounded-lg p-4 border shadow-elegant">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-lg">Diagnosis Summary</h3>
                       <Badge variant={
@@ -1060,12 +1174,12 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       {/* Visual Analytics Dashboard */}
                       {analysisResult.status !== 'error' && (
-                        <div className="space-y-6 bg-muted/20 rounded-lg p-6 border border-border">
+                        <div className="space-y-6 bg-card rounded-lg p-6 border shadow-elegant">
                           <h4 className="font-semibold text-lg flex items-center gap-2">
                             <TrendingUp className="h-5 w-5 text-primary" />
                             Visual Analytics
                           </h4>                      {/* Confidence Gauge */}
-                      <div className="bg-card rounded-lg p-4 border">
+                      <div className="bg-card rounded-lg p-4 border shadow-elegant">
                         <h5 className="font-medium mb-3 text-center">AI Confidence Level</h5>
                         <div className="flex justify-center">
                           <div className="relative w-32 h-32">
@@ -1097,7 +1211,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Symptoms Analysis Chart */}
                         {analysisResult.symptoms && analysisResult.symptoms.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Symptoms Distribution</h5>
                             <ResponsiveContainer width="100%" height={200}>
                               <PieChart>
@@ -1129,7 +1243,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                         {/* Treatment Timeline */}
                         {analysisResult.detailedTreatment?.stepByStepCure && analysisResult.detailedTreatment.stepByStepCure.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Treatment Timeline</h5>
                             <div className="space-y-3">
                               {analysisResult.detailedTreatment.stepByStepCure.map((step, index) => (
@@ -1154,7 +1268,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                         {/* Nutrient Balance Radar */}
                         {analysisResult.nutritionSuggestions && analysisResult.nutritionSuggestions.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Nutrient Balance Analysis</h5>
                             <ResponsiveContainer width="100%" height={250}>
                               <RadarChart data={analysisResult.nutritionSuggestions.map((nutrient, index) => ({
@@ -1180,7 +1294,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                         {/* Growth & Care Metrics */}
                         {(analysisResult.growthTips || analysisResult.seasonalCare) && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Care Recommendations</h5>
                             <div className="space-y-4">
                               {analysisResult.growthTips && analysisResult.growthTips.length > 0 && (
@@ -1215,22 +1329,25 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                         {/* Fertilizer Recommendations Chart */}
                         {analysisResult.fertilizers && analysisResult.fertilizers.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
-                            <h5 className="font-medium mb-3 text-center">Fertilizer Recommendations</h5>
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
+                            <h5 className="font-medium mb-3 text-center flex items-center justify-center gap-2">
+                              🌱 Natural Fertilizer Recommendations
+                              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">100% Organic</Badge>
+                            </h5>
                             <ResponsiveContainer width="100%" height={200}>
                               <BarChart data={analysisResult.fertilizers.map((fert, index) => ({
                                 name: fert.name.length > 15 ? fert.name.substring(0, 15) + '...' : fert.name,
-                                organic: fert.type === 'organic' ? 80 : 20,
-                                chemical: fert.type === 'chemical' ? 80 : 20,
+                                organic: fert.type === 'organic' ? 90 : 70,
+                                natural: fert.type === 'natural' ? 90 : 70,
                                 fullName: fert.name
                               }))}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={(value, name) => [name === 'organic' ? 'Organic' : 'Chemical', 'Type']} />
+                                <Tooltip formatter={(value, name) => [name === 'organic' ? 'Organic' : 'Natural', 'Type']} />
                                 <Legend />
                                 <Bar dataKey="organic" stackId="a" fill="#10b981" name="Organic" />
-                                <Bar dataKey="chemical" stackId="a" fill="#3b82f6" name="Chemical" />
+                                <Bar dataKey="natural" stackId="a" fill="#84cc16" name="Natural" />
                               </BarChart>
                             </ResponsiveContainer>
                           </div>
@@ -1238,7 +1355,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                         {/* Prevention Tips Timeline */}
                         {analysisResult.preventionTips && analysisResult.preventionTips.length > 0 && (
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                          <div className="bg-card rounded-lg p-4 border shadow-elegant">
                             <h5 className="font-medium mb-3 text-center">Prevention Strategy</h5>
                             <div className="space-y-3">
                               {analysisResult.preventionTips.slice(0, 4).map((tip, index) => (
@@ -1256,14 +1373,14 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       {/* Companion Plants Network */}
                       {analysisResult.companionPlants && analysisResult.companionPlants.length > 0 && (
-                        <div className="bg-muted/30 rounded-lg p-4 border">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-medium mb-3 text-center flex items-center justify-center gap-2">
                             <Heart className="h-4 w-4 text-primary" />
                             Companion Plants Network
                           </h5>
                           <div className="flex flex-wrap gap-2 justify-center">
                             {analysisResult.companionPlants.map((plant, index) => (
-                              <Badge key={index} variant="outline" className="bg-white dark:bg-gray-800">
+                              <Badge key={index} variant="outline">
                                 {plant}
                               </Badge>
                             ))}
@@ -1276,7 +1393,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       {/* Warning Signs Alert */}
                       {analysisResult.warningsSigns && analysisResult.warningsSigns.length > 0 && (
-                        <div className="bg-muted/30 rounded-lg p-4 border">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-semibold text-warning mb-3 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
                             Warning Signs to Watch For
@@ -1293,7 +1410,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                       )}
 
                       {/* Health Risk Assessment */}
-                      <div className="bg-muted/30 rounded-lg p-4 border">
+                      <div className="bg-card rounded-lg p-4 border shadow-elegant">
                         <h5 className="font-medium mb-3 text-center">Health Risk Assessment</h5>
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-sm">Overall Risk Level</span>
@@ -1341,7 +1458,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                         {/* AQI Gauge */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-medium mb-3 text-center">Air Quality Index</h5>
                           <div className="flex flex-col items-center">
                             <div className={`text-3xl font-bold mb-2 ${
@@ -1367,7 +1484,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                         </div>
 
                         {/* Pollutant Levels */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-medium mb-3 text-center">Key Pollutants</h5>
                           <div className="space-y-2">
                             {airQualityData.pollutants.pm25 !== undefined && (
@@ -1407,7 +1524,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                         </div>
 
                         {/* Emission Sources */}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                        <div className="bg-card rounded-lg p-4 border shadow-elegant">
                           <h5 className="font-medium mb-3 text-center">Emission Sources</h5>
                           <ResponsiveContainer width="100%" height={120}>
                             <PieChart>
@@ -1446,7 +1563,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                       </div>
 
                       {/* Environmental Impact on Plant Health */}
-                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border shadow-sm">
+                      <div className="bg-card rounded-lg p-4 border shadow-elegant">
                         <h5 className="font-medium mb-3 text-center">Environmental Impact Assessment</h5>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
@@ -1631,7 +1748,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                   )}
 
                   {/* Next Steps */}
-                  <div className="bg-muted/30 rounded-lg p-4 border">
+                  <div className="bg-card rounded-lg p-4 border shadow-elegant">
                     <h4 className="font-semibold text-primary mb-3 flex items-center gap-2">
                       <AlertCircle className="h-4 w-4" />
                       Recommended Actions
@@ -1705,7 +1822,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       {/* Growth Tips */}
                       {analysisResult.growthTips?.length > 0 && (
-                        <div className="bg-success/10 border border-success/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-success mb-3 flex items-center gap-2">
                             <TrendingUp className="h-4 w-4" />
                             Growth Enhancement Tips
@@ -1729,7 +1846,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       {/* Seasonal Care */}
                       {analysisResult.seasonalCare?.length > 0 && (
-                        <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-info mb-3 flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             Seasonal Care Guide
@@ -1747,7 +1864,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       {/* Companion Plants */}
                       {analysisResult.companionPlants?.length > 0 && (
-                        <div className="bg-accent/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold mb-3 flex items-center gap-2">
                             <Leaf className="h-4 w-4" />
                             Great Companion Plants
@@ -1782,7 +1899,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                       </motion.div>
 
                       {/* Error Details */}
-                      <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                      <div className="bg-card border shadow-elegant rounded-lg p-4">
                         <h5 className="font-semibold text-warning mb-3 flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" />
                           What Happened?
@@ -1794,7 +1911,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                       </div>
 
                       {/* Solutions */}
-                      <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+                      <div className="bg-card border shadow-elegant rounded-lg p-4">
                         <h5 className="font-semibold text-info mb-3 flex items-center gap-2">
                           <CheckCircle className="h-4 w-4" />
                           What You Can Do
@@ -1820,7 +1937,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                     <div className="space-y-6">
                       {/* Symptoms */}
                       {analysisResult.symptoms?.length > 0 && (
-                        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-destructive mb-3 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
                             Symptoms Identified
@@ -1838,7 +1955,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       {/* Immediate Actions */}
                       {analysisResult.immediateActions?.length > 0 && (
-                        <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-warning mb-3 flex items-center gap-2">
                             <AlertCircle className="h-4 w-4" />
                             Immediate Actions Required
@@ -1859,7 +1976,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                         <div className="space-y-4">
                           {/* Organic Solutions */}
                           {analysisResult.detailedTreatment.organicSolutions?.length > 0 && (
-                            <div className="bg-success/10 border border-success/20 rounded-lg p-4">
+                            <div className="bg-card border shadow-elegant rounded-lg p-4">
                               <h5 className="font-semibold text-success mb-3 flex items-center gap-2">
                                 <Leaf className="h-4 w-4" />
                                 Organic Treatment Options
@@ -1876,26 +1993,29 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                           )}
 
                           {/* Chemical Solutions */}
-                          {analysisResult.detailedTreatment.chemicalSolutions?.length > 0 && (
-                            <div className="bg-info/10 border border-info/20 rounded-lg p-4">
-                              <h5 className="font-semibold text-info mb-3 flex items-center gap-2">
-                                <Shield className="h-4 w-4" />
-                                Chemical Treatment Options
+                          {analysisResult.detailedTreatment.naturalRemedies?.length > 0 && (
+                            <div className="bg-card border shadow-elegant rounded-lg p-4">
+                              <h5 className="font-semibold text-amber-700 dark:text-amber-300 mb-3 flex items-center gap-2">
+                                <Sparkles className="h-4 w-4" />
+                                🌿 Traditional Home Remedies
                               </h5>
                               <div className="space-y-2">
-                                {analysisResult.detailedTreatment.chemicalSolutions.map((solution: string, index: number) => (
+                                {analysisResult.detailedTreatment.naturalRemedies.map((remedy: string, index: number) => (
                                   <div key={index} className="flex items-start gap-2">
-                                    <Shield className="h-4 w-4 text-info mt-0.5 shrink-0" />
-                                    <span className="text-sm">{solution}</span>
+                                    <Heart className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                                    <span className="text-sm">{remedy}</span>
                                   </div>
                                 ))}
                               </div>
+                              <p className="text-xs text-amber-600 dark:text-amber-400 mt-3 italic">
+                                💡 These traditional remedies have been used by farmers for generations
+                              </p>
                             </div>
                           )}
 
                           {/* Step by Step Cure */}
                           {analysisResult.detailedTreatment.stepByStepCure?.length > 0 && (
-                            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                            <div className="bg-card border shadow-elegant rounded-lg p-4">
                               <h5 className="font-semibold text-primary mb-3 flex items-center gap-2">
                                 <CheckCircle className="h-4 w-4" />
                                 Step-by-Step Treatment Plan
@@ -1917,7 +2037,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                       {/* Prevention Tips */}
                       {analysisResult.preventionTips?.length > 0 && (
-                        <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+                        <div className="bg-card border shadow-elegant rounded-lg p-4">
                           <h5 className="font-semibold text-info mb-3 flex items-center gap-2">
                             <Shield className="h-4 w-4" />
                             Prevention Strategies
@@ -1939,7 +2059,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
                   <div className="space-y-4">
                     {/* Fertilizers */}
                     {analysisResult.fertilizers?.length > 0 && (
-                      <div className="bg-accent/20 rounded-lg p-4">
+                      <div className="bg-card border shadow-elegant rounded-lg p-4">
                         <h5 className="font-semibold mb-3 flex items-center gap-2">
                           <TrendingUp className="h-4 w-4" />
                           Recommended Fertilizers
@@ -1967,7 +2087,7 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                     {/* Nutrition Suggestions */}
                     {analysisResult.nutritionSuggestions?.length > 0 && (
-                      <div className="bg-success/10 border border-success/20 rounded-lg p-4">
+                      <div className="bg-card border shadow-elegant rounded-lg p-4">
                         <h5 className="font-semibold text-success mb-3 flex items-center gap-2">
                           <Heart className="h-4 w-4" />
                           Nutrition Guide
@@ -2025,34 +2145,48 @@ Be detailed and practical. Focus on actionable advice that farmers can implement
 
                   {/* Product Recommendations */}
                   <div className="space-y-4">
-                    <h5 className="font-semibold flex items-center gap-2">
-                      <ShoppingCart className="h-4 w-4" />
-                      Recommended Products
-                    </h5>
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-semibold flex items-center gap-2">
+                        <ShoppingCart className="h-4 w-4" />
+                        🌿 Recommended Natural Products
+                      </h5>
+                      <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
+                        100% Organic & Natural
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      All products are certified organic and chemical-free, supporting sustainable farming practices.
+                    </p>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {productRecommendations.map((product) => (
                         <motion.div
                           key={product.id}
-                          whileHover={{ scale: 1.05 }}
-                          className="bg-card border rounded-lg p-4 space-y-2"
+                          whileHover={{ scale: 1.03, y: -4 }}
+                          className="bg-card border shadow-elegant rounded-xl p-4 space-y-3"
                         >
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-full h-24 object-cover rounded"
-                          />
-                          <h6 className="font-medium text-sm">{product.name}</h6>
+                          <div className="relative">
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-full h-28 object-cover rounded-lg"
+                            />
+                            <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs">
+                              <Leaf className="h-3 w-3 mr-1" />
+                              Organic
+                            </Badge>
+                          </div>
+                          <h6 className="font-semibold text-sm text-foreground">{product.name}</h6>
                           <p className="text-xs text-muted-foreground">{product.description}</p>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-xs">{product.rating}</span>
+                              <span className="text-xs font-medium">{product.rating}</span>
                             </div>
-                            <span className="font-bold text-sm">{product.price}</span>
+                            <span className="font-bold text-primary">{product.price}</span>
                           </div>
-                          <Button size="sm" className="w-full">
+                          <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                             <ShoppingCart className="h-3 w-3 mr-1" />
-                            Buy Now
+                            Shop Natural
                           </Button>
                         </motion.div>
                       ))}

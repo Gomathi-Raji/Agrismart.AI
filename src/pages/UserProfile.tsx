@@ -583,7 +583,7 @@ export default function UserProfile() {
 
         {/* Main Content with Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="hidden lg:grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
+          <TabsList className="hidden lg:grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Home className="h-4 w-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -592,13 +592,9 @@ export default function UserProfile() {
               <Tractor className="h-4 w-4" />
               <span className="hidden sm:inline">Farm</span>
             </TabsTrigger>
-            <TabsTrigger value="activities" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              <span className="hidden sm:inline">Activities</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TabsTrigger value="insights" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Analytics</span>
+              <span className="hidden sm:inline">Insights</span>
             </TabsTrigger>
             <TabsTrigger value="financial" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
@@ -863,61 +859,8 @@ export default function UserProfile() {
             </Card>
           </TabsContent>
 
-          {/* Activities Tab */}
-          <TabsContent value="activities" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Recent Activities</h3>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              {activities.map((activity, idx) => (
-                <Card key={idx} className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className={`p-2 rounded-full ${activity.iconBg}`}>
-                      <activity.icon className={`h-4 w-4 ${activity.iconColor}`} />
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{activity.title}</h4>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {activity.time}
-                          <Badge variant="secondary" className="text-xs">
-                            {activity.category}
-                          </Badge>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{activity.description}</p>
-                      {activity.details && (
-                        <div className="text-xs text-muted-foreground">
-                          {activity.details}
-                        </div>
-                      )}
-                      {activity.amount && (
-                        <div className="flex items-center gap-1 text-sm font-medium text-green-600">
-                          <DollarSign className="h-3 w-3" />
-                          {activity.amount}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            <div className="text-center">
-              <Button variant="outline">
-                Load More Activities
-              </Button>
-            </div>
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
+          {/* Insights Tab - Combined Activities & Analytics */}
+          <TabsContent value="insights" className="space-y-6">
             {/* Key Performance Indicators */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {stats.map((stat, idx) => (
@@ -1040,6 +983,59 @@ export default function UserProfile() {
                 </Card>
               </div>
             </div>
+
+            {/* Recent Activities Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Recent Activities</h3>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                {activities.map((activity, idx) => (
+                  <Card key={idx} className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className={`p-2 rounded-full ${activity.iconBg}`}>
+                        <activity.icon className={`h-4 w-4 ${activity.iconColor}`} />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium">{activity.title}</h4>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {activity.time}
+                            <Badge variant="secondary" className="text-xs">
+                              {activity.category}
+                            </Badge>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{activity.description}</p>
+                        {activity.details && (
+                          <div className="text-xs text-muted-foreground">
+                            {activity.details}
+                          </div>
+                        )}
+                        {activity.amount && (
+                          <div className="flex items-center gap-1 text-sm font-medium text-green-600">
+                            <DollarSign className="h-3 w-3" />
+                            {activity.amount}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="text-center">
+                <Button variant="outline">
+                  Load More Activities
+                </Button>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Financial Tab */}
@@ -1062,7 +1058,7 @@ export default function UserProfile() {
 
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-background/95 backdrop-blur-sm border-t border-border">
-          <div className="grid grid-cols-6 gap-1 p-2">
+          <div className="grid grid-cols-5 gap-1 p-2">
             <Button
               variant={activeTab === "overview" ? "default" : "ghost"}
               size="sm"
@@ -1082,22 +1078,13 @@ export default function UserProfile() {
               <span className="text-xs">Farm</span>
             </Button>
             <Button
-              variant={activeTab === "activities" ? "default" : "ghost"}
+              variant={activeTab === "insights" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setActiveTab("activities")}
-              className="flex flex-col items-center gap-1 h-auto py-2"
-            >
-              <Activity className="h-4 w-4" />
-              <span className="text-xs">Activities</span>
-            </Button>
-            <Button
-              variant={activeTab === "analytics" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setActiveTab("analytics")}
+              onClick={() => setActiveTab("insights")}
               className="flex flex-col items-center gap-1 h-auto py-2"
             >
               <BarChart3 className="h-4 w-4" />
-              <span className="text-xs">Analytics</span>
+              <span className="text-xs">Insights</span>
             </Button>
             <Button
               variant={activeTab === "financial" ? "default" : "ghost"}
@@ -1143,20 +1130,11 @@ export default function UserProfile() {
                 <Tractor className="h-4 w-4" />
               </Button>
               <Button
-                variant={activeTab === "activities" ? "default" : "ghost"}
+                variant={activeTab === "insights" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setActiveTab("activities")}
+                onClick={() => setActiveTab("insights")}
                 className="w-10 h-10 p-0"
-                title="Activities"
-              >
-                <Activity className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={activeTab === "analytics" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveTab("analytics")}
-                className="w-10 h-10 p-0"
-                title="Analytics"
+                title="Insights"
               >
                 <BarChart3 className="h-4 w-4" />
               </Button>

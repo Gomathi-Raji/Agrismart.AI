@@ -1,7 +1,7 @@
 import { GreetingSection } from "@/components/home/GreetingSection";
 import { QuickActionsGrid } from "@/components/home/QuickActionsGrid";
 import { AlertsSection } from "@/components/home/AlertsSection";
-import { EngagementSection } from "@/components/home/EngagementSection";
+// import { EngagementSection } from "@/components/home/EngagementSection";
 import { KnowledgeSection } from "@/components/home/KnowledgeSection";
 import { AISuggestionsSection } from "@/components/home/AIsuggestionsSection";
 import { FieldIntelligenceMap } from "@/components/cards/FieldIntelligenceMap";
@@ -56,8 +56,8 @@ const Index = () => {
       {/* AI Suggestions */}
       <AISuggestionsSection />
 
-      {/* Engagement Features */}
-      <EngagementSection />
+      {/* Engagement Features
+      <EngagementSection /> */}
 
       {/* Knowledge & News */}
       <KnowledgeSection />

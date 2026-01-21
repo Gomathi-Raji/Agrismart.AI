@@ -25,6 +25,7 @@ import {
 import { fetchWeatherApi } from 'openmeteo';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { config } from '@/lib/config';
 
 interface WeatherMapModalProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void;
@@ -39,7 +40,7 @@ interface WeatherData {
   address: string;
 }
 
-const MAPBOX_API_KEY = 'pk.eyJ1IjoiaGFyaXNod2FyYW4iLCJhIjoiY21hZHhwZGs2MDF4YzJxczh2aDd0cWg1MyJ9.qcu0lpqVlZlC2WFxhwb1Pg';
+const MAPBOX_API_KEY = config.MAPBOX_API_KEY;
 
 // Weather overlay types
 interface WeatherOverlay {

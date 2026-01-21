@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Camera, ShoppingCart, Users, User } from "lucide-react";
+import { Home, Camera, TrendingUp, Users, User } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +14,8 @@ export function BottomNavigation() {
 
   const navItems = [
     { name: "Home", path: "/", icon: Home },
-    { name: "Buy", path: "/buy", icon: ShoppingCart },
-    { name: "Sell", path: "/sell", icon: Camera, isCenter: true },
+    { name: "Market Analysis", path: "/market-analysis", icon: TrendingUp },
+    { name: "Diagnose", path: "/diagnose", icon: Camera, isCenter: true },
     { name: "Community", path: "/community", icon: Users },
     { name: "Profile", path: "/user-profile", icon: User },
   ];
@@ -33,7 +33,7 @@ export function BottomNavigation() {
                   size="icon"
                   className={cn(
                     "w-14 h-14 rounded-full shadow-floating bg-gradient-primary hover:shadow-glow transition-all duration-300",
-                    isActiveItem ? "scale-110 shadow-glow" : "hover:scale-105"
+                    isActiveItem ? "scale-110 shadow-glow ring-2 ring-primary/20" : "hover:scale-105"
                   )}
                 >
                   <item.icon className="h-6 w-6 text-primary-foreground" />
@@ -49,7 +49,7 @@ export function BottomNavigation() {
               className={cn(
                 "flex flex-col items-center p-2 rounded-lg min-w-[60px] transition-colors",
                 isActiveItem
-                  ? "text-primary"
+                  ? "text-primary bg-primary/10"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

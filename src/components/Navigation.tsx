@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { VoiceSearchCommand } from "@/components/navigation/VoiceSearchCommand";
 import { useAuth } from "@/contexts/AuthContext";
 // import { LanguageToggle } from "@/components/LanguageToggle";
 // import { useLanguage } from "@/contexts/LanguageContext";
@@ -26,7 +27,6 @@ import {
   Cloud,
   Sparkles,
   Bell,
-  Search,
   ChevronDown,
   LogOut
 } from "lucide-react";export function Navigation() {
@@ -37,13 +37,12 @@ import {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const navItems = [
+  const mobileNavItems = [
     { name: "Home", path: "/", icon: Home },
-    { name: "Buy", path: "/buy", icon: ShoppingCart },
-    { name: "Sell", path: "/sell", icon: TrendingUp },
+    { name: "Market Analysis", path: "/market-analysis", icon: TrendingUp },
+    { name: "Diagnose", path: "/diagnose", icon: Camera },
     { name: "Community", path: "/community", icon: Users },
-    { name: "Weather", path: "/weather", icon: Cloud }, 
-    { name: "", path: "/user-profile", icon: User }, 
+    { name: "Weather", path: "/weather", icon: Cloud },
   ];
 
   const diagnoseItems = [
@@ -127,9 +126,7 @@ import {
 
               {/* Theme Toggle and Search */}
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon">
-                  <Search className="h-4 w-4" />
-                </Button>
+                <VoiceSearchCommand />
                 <NotificationBell 
                   variant="outline"
                   size="md"
@@ -177,14 +174,14 @@ import {
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-elegant z-50">
         <div className="grid grid-cols-5 h-[64px]">
-          {navItems.slice(0, 3).map((item) => (
+          {mobileNavItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center justify-center w-[72px] h-full mx-auto ${
+              className={`flex flex-col items-center justify-center w-[72px] h-full mx-auto rounded-lg transition-colors ${
                 isActive(item.path)
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="h-[28px] flex items-center justify-center">
@@ -200,36 +197,10 @@ import {
             </Link>
           ))}
           
-          {/* Mobile Diagnose Button */}
-          <Link
-            to="/diagnose"
-            className={`flex flex-col items-center space-y-1 p-2 rounded-md min-w-[60px] ${
-              isActive("/diagnose") || isActive("/hybrid")
-                ? "text-primary"
-                : "text-muted-foreground"
-            }`}
-          >
-            <Camera className="h-5 w-5" />
-            <span className="text-xs font-medium">Diagnose</span>
-          </Link>
-          {navItems.slice(3, 5).map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center space-y-1 p-2 rounded-md min-w-[60px] ${
-                isActive(item.path)
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-            </Link>
-          ))}
-          
           {/* More Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex flex-col items-center justify-center w-[72px] h-full mx-auto text-muted-foreground"
+            className="flex flex-col items-center justify-center w-[72px] h-full mx-auto text-muted-foreground rounded-lg transition-colors hover:text-foreground"
           >
             <div className="h-[28px] flex items-center justify-center">
               <Menu className="h-5 w-5 shrink-0" />
@@ -246,7 +217,23 @@ import {
         <div className="md:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-40">
           <div className="fixed bottom-16 left-0 right-0 bg-card border-t border-border rounded-t-2xl p-6">
             <div className="grid grid-cols-2 gap-4">
-              {/* Add Hybrid Breeding to mobile more menu */}
+              {/* Add Buy, Sell and Hybrid Breeding to mobile more menu */}
+              <Link
+                to="/buy"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-accent transition-colors"
+              >
+                <ShoppingCart className="h-5 w-5 text-primary" />
+                <span className="text-sm font-medium">Buy</span>
+              </Link>
+              <Link
+                to="/sell"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-accent transition-colors"
+              >
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <span className="text-sm font-medium">Sell</span>
+              </Link>
               <Link
                 to="/hybrid"
                 onClick={() => setIsMenuOpen(false)}

@@ -3,7 +3,7 @@ import { MobileHeader } from "./MobileHeader";
 import { Footer } from "./Footer";
 import { BottomNavigation } from "./BottomNavigation";
 import { NavigationBreadcrumb } from "@/components/navigation/NavigationBreadcrumb";
-import { FloatingActionMenu } from "@/components/navigation/FloatingActionMenu";
+// import { FloatingActionMenu } from "@/components/navigation/FloatingActionMenu";
 import { BackToTopButton } from "@/components/navigation/BackToTopButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -29,7 +29,7 @@ export function Layout({ children, hideFooter = false, hideBreadcrumb = false }:
       </main>
       {!hideFooter && !isMobile && <Footer />}
       <BottomNavigation />
-      <FloatingActionMenu />
+      {/* <FloatingActionMenu /> */}
       <BackToTopButton />
     </div>
   );
