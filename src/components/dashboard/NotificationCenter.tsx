@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Bell, 
-  AlertTriangle, 
-  Info, 
-  CheckCircle, 
-  X, 
+import { useNotifications } from "@/contexts/NotificationContext";
+import {
+  Bell,
+  AlertTriangle,
+  Info,
+  CheckCircle,
+  X,
   Settings,
   CloudRain,
   TrendingUp,
@@ -32,162 +33,8 @@ interface NotificationCenterProps {
 }
 
 export function NotificationCenter({ userType = "farmer" }: NotificationCenterProps) {
-  const [notifications, setNotifications] = useState<Notification[]>(getInitialNotifications());
+  const { notifications, unreadCount, markAsRead, markAllAsRead, removeNotification, clearAll, settings, updateSettings } = useNotifications();
   const [showSettings, setShowSettings] = useState(false);
-  const [notificationSettings, setNotificationSettings] = useState({
-    weather: true,
-    market: true,
-    orders: true,
-    system: false,
-    marketing: false
-  });
-
-  function getInitialNotifications(): Notification[] {
-    const farmerNotifications: Notification[] = [
-      {
-        id: "1",
-        type: "weather",
-        title: "Weather Alert",
-        message: "Heavy rainfall expected in your area. Protect crops from waterlogging.",
-        timestamp: "2 hours ago",
-        priority: "high",
-        read: false,
-        actionable: true
-      },
-      {
-        id: "2",
-        type: "market",
-        title: "Price Alert",
-        message: "Rice prices increased by 12% - Good time to sell your harvest",
-        timestamp: "4 hours ago",
-        priority: "medium",
-        read: false,
-        actionable: true
-      },
-      {
-        id: "3",
-        type: "system",
-        title: "Diagnosis Complete",
-        message: "Your tomato plant analysis is ready with treatment recommendations",
-        timestamp: "1 day ago",
-        priority: "medium",
-        read: true
-      },
-      {
-        id: "4",
-        type: "alert",
-        title: "Fertilizer Reminder",
-        message: "Time to apply NPK fertilizer to your wheat crop",
-        timestamp: "2 days ago",
-        priority: "low",
-        read: true
-      }
-    ];
-
-    const sellerNotifications: Notification[] = [
-      {
-        id: "1",
-        type: "order",
-        title: "New Order",
-        message: "Premium Tomatoes - 50kg ordered by Rahul Sharma",
-        timestamp: "30 minutes ago",
-        priority: "high",
-        read: false,
-        actionable: true
-      },
-      {
-        id: "2",
-        type: "system",
-        title: "Low Stock Alert",
-        message: "Organic Wheat Seeds - Only 5 units remaining",
-        timestamp: "2 hours ago",
-        priority: "medium",
-        read: false,
-        actionable: true
-      },
-      {
-        id: "3",
-        type: "order",
-        title: "Payment Received",
-        message: "₹2,250 payment received for Premium Tomatoes order",
-        timestamp: "1 day ago",
-        priority: "low",
-        read: true
-      }
-    ];
-
-    const buyerNotifications: Notification[] = [
-      {
-        id: "1",
-        type: "match",
-        title: "New Supplier Match",
-        message: "Rajesh Farms can supply 200kg of tomatoes at ₹42/kg",
-        timestamp: "30 minutes ago",
-        priority: "high",
-        read: false,
-        actionable: true
-      },
-      {
-        id: "2",
-        type: "demand",
-        title: "Demand Expiring",
-        message: "Your sugarcane demand expires in 2 days - 8 suppliers interested",
-        timestamp: "2 hours ago",
-        priority: "medium",
-        read: false,
-        actionable: true
-      },
-      {
-        id: "3",
-        type: "purchase",
-        title: "Purchase Confirmed",
-        message: "Hybrid Rice Seeds order confirmed - Delivery in 3 days",
-        timestamp: "1 day ago",
-        priority: "low",
-        read: true
-      }
-    ];
-
-    const adminNotifications: Notification[] = [
-      {
-        id: "1",
-        type: "system",
-        title: "System Alert",
-        message: "High server load detected - Consider scaling up resources",
-        timestamp: "1 hour ago",
-        priority: "high",
-        read: false,
-        actionable: true
-      },
-      {
-        id: "2",
-        type: "order",
-        title: "Revenue Milestone",
-        message: "Platform crossed ₹10L monthly revenue milestone",
-        timestamp: "3 hours ago",
-        priority: "medium",
-        read: false
-      },
-      {
-        id: "3",
-        type: "system",
-        title: "New User Registration",
-        message: "50 new farmers registered today - 15% increase from yesterday",
-        timestamp: "6 hours ago",
-        priority: "low",
-        read: true
-      }
-    ];
-
-    switch (userType) {
-      case "buyer":
-        return buyerNotifications;
-      case "admin":
-        return adminNotifications;
-      default:
-        return farmerNotifications;
-    }
-  }
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -195,18 +42,12 @@ export function NotificationCenter({ userType = "farmer" }: NotificationCenterPr
         return CloudRain;
       case "market":
         return TrendingUp;
-      case "order":
-        return Package;
+      case "price-alert":
+        return TrendingUp;
       case "system":
         return Info;
-      case "alert":
-        return AlertTriangle;
-      case "match":
-        return Users;
-      case "demand":
-        return Package;
-      case "purchase":
-        return Package;
+      case "info":
+        return Info;
       default:
         return Bell;
     }
@@ -214,6 +55,8 @@ export function NotificationCenter({ userType = "farmer" }: NotificationCenterPr
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
+      case "urgent":
+        return "text-destructive bg-destructive/10";
       case "high":
         return "text-destructive bg-destructive/10";
       case "medium":
@@ -223,25 +66,18 @@ export function NotificationCenter({ userType = "farmer" }: NotificationCenterPr
     }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
-  };
+  const formatTimestamp = (timestamp: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
 
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
   };
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <Card className="shadow-elegant">
@@ -277,13 +113,13 @@ export function NotificationCenter({ userType = "farmer" }: NotificationCenterPr
           <div className="mb-6 p-4 bg-accent/30 rounded-lg space-y-3">
             <h4 className="font-medium text-sm">Notification Settings</h4>
             <div className="space-y-2">
-              {Object.entries(notificationSettings).map(([key, value]) => (
+              {Object.entries(settings.types).map(([key, value]) => (
                 <div key={key} className="flex items-center justify-between">
                   <span className="text-sm capitalize">{key} Notifications</span>
                   <Switch
                     checked={value}
                     onCheckedChange={(checked) =>
-                      setNotificationSettings(prev => ({ ...prev, [key]: checked }))
+                      updateSettings({ types: { ...settings.types, [key]: checked } })
                     }
                   />
                 </div>
@@ -325,11 +161,11 @@ export function NotificationCenter({ userType = "farmer" }: NotificationCenterPr
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">{notification.message}</p>
-                        <p className="text-xs text-muted-foreground">{notification.timestamp}</p>
+                        <p className="text-xs text-muted-foreground">{formatTimestamp(notification.timestamp)}</p>
                         
-                        {notification.actionable && (
-                          <Button variant="outline" size="sm" className="mt-2 h-7 text-xs">
-                            Take Action
+                        {notification.actionUrl && notification.actionText && (
+                          <Button variant="outline" size="sm" className="mt-2 h-7 text-xs" asChild>
+                            <a href={notification.actionUrl}>{notification.actionText}</a>
                           </Button>
                         )}
                       </div>

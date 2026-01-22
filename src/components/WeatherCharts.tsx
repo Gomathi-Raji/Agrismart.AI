@@ -28,10 +28,20 @@ import {
 import { WeatherData } from "@/services/weatherService";
 
 interface WeatherChartsProps {
-  weatherData: WeatherData;
+  weatherData: WeatherData | null;
 }
 
 export const WeatherCharts: React.FC<WeatherChartsProps> = ({ weatherData }) => {
+  // Early return if no weather data
+  if (!weatherData) {
+    return (
+      <Card className="shadow-elegant">
+        <CardContent className="flex items-center justify-center h-80">
+          <p className="text-muted-foreground">Loading weather charts...</p>
+        </CardContent>
+      </Card>
+    );
+  }
   // Process hourly data for the next 24 hours
   const hourlyChartData = useMemo(() => {
     if (!weatherData.hourly || !weatherData.hourly.time) return [];
@@ -62,7 +72,6 @@ export const WeatherCharts: React.FC<WeatherChartsProps> = ({ weatherData }) => 
       };
     });
     
-    console.log('Hourly chart data sample:', data.slice(0, 3)); // Debug first 3 hours
     return data;
   }, [weatherData]);
 

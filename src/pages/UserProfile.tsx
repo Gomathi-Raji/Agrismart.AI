@@ -11,6 +11,7 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { SettingsModal } from "@/components/SettingsModal";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { motion } from "framer-motion";
 import { io, Socket } from "socket.io-client";
 import {
@@ -82,10 +83,11 @@ interface DetectionResult {
   timestamp: string;
 }
 
-const CAMERA_URL = import.meta.env.VITE_IP_CAMERA_URL1 || 'http://192.0.0.4:8080';
+const CAMERA_URL = import.meta.env.VITE_IP_CAMERA_URL1 || 'http://100.77.28.237:8080';
 
 export default function UserProfile() {
   const { user } = useAuth();
+  const { addNotification } = useNotifications();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [cameraRefreshKey, setCameraRefreshKey] = useState(0);
@@ -224,25 +226,35 @@ export default function UserProfile() {
 
   // WebSocket connection for real-time detection updates
   useEffect(() => {
-    const socketConnection = io();
+    console.log('🔌 Setting up WebSocket connection for detection...');
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002';
+    console.log('🌐 Connecting to backend URL:', backendUrl);
+    
+    const socketConnection = io(backendUrl);
+    console.log('📡 Socket.IO instance created');
     
     socketConnection.on('connect', () => {
-      console.log('Connected to detection server');
+      console.log('✅ Connected to detection server');
       // Subscribe to detection events
       socketConnection.emit('subscribe-detection');
-      console.log('Subscribed to detection events');
+      console.log('📨 Subscribed to detection events');
       setDetectionStatus(prev => prev === 'connecting' ? 'running' : prev);
     });
 
+    socketConnection.on('connect_error', (error) => {
+      console.error('❌ WebSocket connection error:', error);
+    });
+
     socketConnection.on('disconnect', () => {
-      console.log('Disconnected from detection server');
+      console.log('🔌 Disconnected from detection server');
       setDetectionStatus('idle');
     });
 
     socketConnection.on('detection', (data: DetectionResult | DetectionResult[]) => {
-      console.log('Detection received:', data);
+      console.log('🎯 Detection event received:', data);
       // Handle both single detection and array of detections
       const detectionArray = Array.isArray(data) ? data : [data];
+      console.log('📊 Processing', detectionArray.length, 'detection(s)');
       
       // Convert normalized coordinates (0-1) to percentage (0-100)
       const normalizedDetections = detectionArray.map(det => ({
@@ -255,8 +267,34 @@ export default function UserProfile() {
         }
       }));
       
+      console.log('🔄 Normalized detections:', normalizedDetections);
       setDetections(normalizedDetections);
       setDetectionHistory(prev => [...normalizedDetections, ...prev].slice(0, 10)); // Keep last 10 detections
+      
+      // Add notifications for detected animals
+      normalizedDetections.forEach(detection => {
+        console.log('🔔 Adding notification for:', detection.class);
+        if (detection.class.toLowerCase().includes('elephant')) {
+          addNotification({
+            type: 'system',
+            priority: 'urgent',
+            title: 'Elephant Detected!',
+            message: `An elephant has been detected on your farm with ${(detection.confidence * 100).toFixed(1)}% confidence. Please take immediate safety precautions.`,
+            autoHide: false,
+            icon: '🐘'
+          });
+        } else {
+          addNotification({
+            type: 'system',
+            priority: 'high',
+            title: 'Animal Detected',
+            message: `A ${detection.class} has been detected on your farm with ${(detection.confidence * 100).toFixed(1)}% confidence.`,
+            autoHide: true,
+            hideAfter: 10000,
+            icon: '🔍'
+          });
+        }
+      });
       
       // Auto-clear detections after 3 seconds so bounding boxes don't persist
       setTimeout(() => {
