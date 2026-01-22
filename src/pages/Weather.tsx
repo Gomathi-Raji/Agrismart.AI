@@ -149,16 +149,20 @@ export default function Weather() {
                            conditionText.includes('snow') ? CloudSnow :
                            conditionText.includes('storm') ? Zap : Sun;
 
-  // Simple forecast data from daily forecasts
+  // Simple forecast data from daily forecasts - use upcoming 7 days from current date
   const forecastData = dailyForecasts.slice(0, 7).map((forecast, index) => {
     const conditionText = getWeatherCondition(forecast.weather_code || 0);
     const condition = typeof conditionText === 'string' ? conditionText : conditionText.condition;
-    
+
+    // Generate date for upcoming days starting from today
+    const forecastDate = new Date();
+    forecastDate.setDate(forecastDate.getDate() + index);
+
     return {
-      day: index === 0 ? 'Today' : 
-           index === 1 ? 'Tomorrow' : 
-           new Date(forecast.date).toLocaleDateString('en-US', { weekday: 'short' }),
-      date: index === 0 ? '' : new Date(forecast.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      day: index === 0 ? 'Today' :
+           index === 1 ? 'Tomorrow' :
+           forecastDate.toLocaleDateString('en-US', { weekday: 'short' }),
+      date: index === 0 ? '' : forecastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       high: Math.round(forecast.temperature_max || 25),
       low: Math.round(forecast.temperature_min || 15),
       condition: condition,

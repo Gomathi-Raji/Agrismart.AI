@@ -89,15 +89,19 @@ export default function Weather() {
     }
   };
 
-  // Enhanced forecast data using our new daily forecast processing
+  // Enhanced forecast data using our new daily forecast processing - use upcoming 7 days from current date
   const forecastData = useMemo(() => {
-    return dailyForecasts.map((forecast, index) => {
+    return dailyForecasts.slice(0, 7).map((forecast, index) => {
       const weatherCondition = getWeatherCondition(forecast.weather_code);
       const WeatherIcon = getWeatherIcon(weatherCondition.icon);
-      
+
+      // Generate date for upcoming days starting from today
+      const forecastDate = new Date();
+      forecastDate.setDate(forecastDate.getDate() + index);
+
       return {
-        day: index === 0 ? "Today" : forecast.date.toLocaleDateString('en-US', { weekday: 'short' }),
-        date: forecast.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        day: index === 0 ? "Today" : forecastDate.toLocaleDateString('en-US', { weekday: 'short' }),
+        date: forecastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         high: Math.round(forecast.temperature_max),
         low: Math.round(forecast.temperature_min),
         condition: weatherCondition.condition,

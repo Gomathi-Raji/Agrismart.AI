@@ -54,6 +54,9 @@ import { FinancialManagement } from "@/components/dashboard/FinancialManagement"
 import { CropPlanningCalendar } from "@/components/dashboard/CropPlanningCalendar";
 import { EquipmentManagement } from "@/components/dashboard/EquipmentManagement";
 import { ProductManagement } from "@/components/ProductManagement";
+import { useAuth } from "@/contexts/AuthContext";
+import { getBlockchainTransactions, type BlockchainTransactionHistoryItem } from "@/services/blockchainBackend";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ResponsiveContainer,
   BarChart,
@@ -82,10 +85,16 @@ interface DetectionResult {
 const CAMERA_URL = import.meta.env.VITE_IP_CAMERA_URL1 || 'http://192.0.0.4:8080';
 
 export default function UserProfile() {
+  const { user } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [cameraRefreshKey, setCameraRefreshKey] = useState(0);
   const [cameraError, setCameraError] = useState(false);
+
+  // Previous transactions (blockchain/payment transparency)
+  const [previousTransactions, setPreviousTransactions] = useState<BlockchainTransactionHistoryItem[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [transactionsError, setTransactionsError] = useState<string | null>(null);
   
   // Detection state
   const [detectionRunning, setDetectionRunning] = useState(false);
@@ -159,7 +168,7 @@ export default function UserProfile() {
   const startDetection = async () => {
     try {
       setDetectionStatus('connecting');
-      const response = await fetch('http://localhost:3002/api/detection/start', {
+      const response = await fetch('/api/detection/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,7 +192,7 @@ export default function UserProfile() {
 
   const stopDetection = async () => {
     try {
-      const response = await fetch('http://localhost:3002/api/detection/stop', {
+      const response = await fetch('/api/detection/stop', {
         method: 'POST',
       });
 
@@ -202,7 +211,7 @@ export default function UserProfile() {
 
   const getDetectionStatus = async () => {
     try {
-      const response = await fetch('http://localhost:3002/api/detection/status');
+      const response = await fetch('/api/detection/status');
       if (response.ok) {
         const status = await response.json();
         setDetectionRunning(status.running);
@@ -215,7 +224,7 @@ export default function UserProfile() {
 
   // WebSocket connection for real-time detection updates
   useEffect(() => {
-    const socketConnection = io('http://localhost:3002');
+    const socketConnection = io();
     
     socketConnection.on('connect', () => {
       console.log('Connected to detection server');
@@ -267,6 +276,38 @@ export default function UserProfile() {
       socketConnection.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTransactions = async () => {
+      try {
+        setTransactionsLoading(true);
+        setTransactionsError(null);
+
+        const result = await getBlockchainTransactions({
+          userId: user?._id || 'demo-farmer-1',
+          limit: 10
+        });
+
+        if (!cancelled) {
+          setPreviousTransactions(result.transactions || []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setTransactionsError(error instanceof Error ? error.message : 'Failed to load transactions');
+          setPreviousTransactions([]);
+        }
+      } finally {
+        if (!cancelled) setTransactionsLoading(false);
+      }
+    };
+
+    loadTransactions();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?._id]);
 
   // CRUD for activities
   const [activities, setActivities] = useState([
@@ -1040,6 +1081,72 @@ export default function UserProfile() {
 
           {/* Financial Tab */}
           <TabsContent value="financial" className="space-y-6">
+            <Card className="shadow-elegant">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  Previous Transactions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {transactionsLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading transactions…</div>
+                ) : transactionsError ? (
+                  <div className="text-sm text-destructive">{transactionsError}</div>
+                ) : previousTransactions.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No transactions found yet.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="hidden md:table-cell">Tx Hash</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previousTransactions.map((tx) => (
+                        <TableRow key={tx.transactionHash}>
+                          <TableCell className="capitalize">{tx.transactionType}</TableCell>
+                          <TableCell>
+                            ₹{Number(tx.amount || 0).toLocaleString()} {tx.currency || ''}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={tx.status === 'confirmed' ? 'default' : tx.status === 'failed' ? 'destructive' : 'secondary'}
+                              className="capitalize"
+                            >
+                              {tx.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {tx.timestamp ? new Date(tx.timestamp).toLocaleDateString() : '-'}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {tx.explorerUrl ? (
+                              <a
+                                href={tx.explorerUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary hover:underline"
+                                title={tx.transactionHash}
+                              >
+                                {tx.transactionHash.slice(0, 10)}…{tx.transactionHash.slice(-6)}
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground">{tx.transactionHash.slice(0, 10)}…</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className="shadow-elegant">
               <CardHeader>
                 <CardTitle>Financial Management</CardTitle>

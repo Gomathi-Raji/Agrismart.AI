@@ -426,7 +426,7 @@ export const fetchMandiPrices = async (
     if (filters.onlyRecentData !== undefined) params.append('onlyRecentData', filters.onlyRecentData.toString());
     if (filters.searchTerm) params.append('searchTerm', filters.searchTerm);
 
-    const backendUrl = `http://localhost:3002/api/market/mandi-prices${params.toString() ? '?' + params.toString() : ''}`;
+    const backendUrl = `/api/market/mandi-prices${params.toString() ? '?' + params.toString() : ''}`;
     console.log('Backend API Request URL:', backendUrl);
 
     // Create AbortController for timeout

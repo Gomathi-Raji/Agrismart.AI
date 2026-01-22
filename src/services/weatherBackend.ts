@@ -1,5 +1,5 @@
 // Weather service for backend API integration
-const API_BASE_URL = 'http://localhost:3002/api';
+const API_BASE_URL = import.meta.env.DEV ? '/api' : 'http://localhost:3002/api';
 
 export interface WeatherCurrent {
   location: {

@@ -11,7 +11,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
+  ComposedChart
 } from "recharts";
 import type { TooltipProps } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,43 +34,63 @@ interface WeatherChartsProps {
 export const WeatherCharts: React.FC<WeatherChartsProps> = ({ weatherData }) => {
   // Process hourly data for the next 24 hours
   const hourlyChartData = useMemo(() => {
-    if (!weatherData.hourly) return [];
+    if (!weatherData.hourly || !weatherData.hourly.time) return [];
     
     const hoursToShow = Math.min(24, weatherData.hourly.time.length);
-    return Array.from({ length: hoursToShow }, (_, i) => ({
-      time: weatherData.hourly.time[i].toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-      hour: weatherData.hourly.time[i].getHours(),
-      temperature: Math.round(weatherData.hourly.temperature_2m[i]),
-      humidity: Math.round(weatherData.hourly.relative_humidity_2m[i]),
-      precipitation: weatherData.hourly.precipitation[i] || 0,
-      windSpeed: Math.round(weatherData.hourly.wind_speed_10m[i]),
-      uvIndex: Math.round(weatherData.hourly.uv_index[i] || 0),
-      pressure: Math.round(weatherData.hourly.pressure_msl[i])
-    }));
+    const data = Array.from({ length: hoursToShow }, (_, i) => {
+      // Safety checks for each field
+      const time = weatherData.hourly.time[i];
+      const temperature = weatherData.hourly.temperature_2m?.[i];
+      const humidity = weatherData.hourly.relative_humidity_2m?.[i];
+      const precipitation = weatherData.hourly.precipitation?.[i] || 0;
+      const windSpeed = weatherData.hourly.wind_speed_10m?.[i];
+      const uvIndex = weatherData.hourly.uv_index?.[i] || 0;
+      const pressure = weatherData.hourly.pressure_msl?.[i];
+      
+      return {
+        time: time ? time.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) : `${i}:00`,
+        hour: time ? time.getHours() : i,
+        temperature: temperature ? Math.round(temperature) : 0,
+        humidity: humidity ? Math.round(humidity) : 0,
+        precipitation: typeof precipitation === 'number' ? precipitation : 0,
+        windSpeed: windSpeed ? Math.round(windSpeed) : 0,
+        uvIndex: typeof uvIndex === 'number' ? Math.round(uvIndex) : 0,
+        pressure: pressure ? Math.round(pressure) : 1013
+      };
+    });
+    
+    console.log('Hourly chart data sample:', data.slice(0, 3)); // Debug first 3 hours
+    return data;
   }, [weatherData]);
 
-  // Process daily data for 7-day charts
+  // Process daily data for 7-day charts - use upcoming 7 days from current date
   const dailyChartData = useMemo(() => {
     if (!weatherData.daily) return [];
     
     const daysToShow = Math.min(7, weatherData.daily.time.length);
-    return Array.from({ length: daysToShow }, (_, i) => ({
-      day: weatherData.daily.time[i].toLocaleDateString('en-US', { 
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      }),
-      date: weatherData.daily.time[i],
-      tempMax: Math.round(weatherData.daily.temperature_2m_max[i]),
-      tempMin: Math.round(weatherData.daily.temperature_2m_min[i]),
-      precipitation: weatherData.daily.precipitation_sum[i] || 0,
-      windMax: Math.round(weatherData.daily.wind_speed_10m_max[i]),
-      uvMax: Math.round(weatherData.daily.uv_index_max[i] || 0),
-      sunshineHours: Math.round((weatherData.daily.sunshine_duration[i] || 0) / 3600)
-    }));
+    return Array.from({ length: daysToShow }, (_, i) => {
+      // Generate date for upcoming days starting from today
+      const forecastDate = new Date();
+      forecastDate.setDate(forecastDate.getDate() + i);
+      
+      return {
+        day: i === 0 ? 'Today' : forecastDate.toLocaleDateString('en-US', { 
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric'
+        }),
+        date: forecastDate,
+        tempMax: Math.round(weatherData.daily.temperature_2m_max[i]),
+        tempMin: Math.round(weatherData.daily.temperature_2m_min[i]),
+        precipitation: weatherData.daily.precipitation_sum[i] || 0,
+        windMax: Math.round(weatherData.daily.wind_speed_10m_max[i]),
+        uvMax: Math.round(weatherData.daily.uv_index_max[i] || 0),
+        sunshineHours: Math.round((weatherData.daily.sunshine_duration[i] || 0) / 3600)
+      };
+    });
   }, [weatherData]);
 
   const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
@@ -158,48 +179,69 @@ export const WeatherCharts: React.FC<WeatherChartsProps> = ({ weatherData }) => 
         </CardHeader>
         <CardContent>
           <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={hourlyChartData}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="time" 
-                  tick={{ fontSize: 12 }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis 
-                  yAxisId="precipitation" 
-                  orientation="left" 
-                  tick={{ fontSize: 12 }}
-                  label={{ value: 'Precipitation (mm)', angle: -90, position: 'insideLeft' }}
-                />
-                <YAxis 
-                  yAxisId="wind" 
-                  orientation="right" 
-                  tick={{ fontSize: 12 }}
-                  label={{ value: 'Wind Speed (km/h)', angle: 90, position: 'insideRight' }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Area 
-                  yAxisId="precipitation"
-                  type="monotone" 
-                  dataKey="precipitation" 
-                  stroke="hsl(210, 100%, 70%)" 
-                  fill="hsl(210, 100%, 85%)"
-                  fillOpacity={0.6}
-                  name="Precipitation (mm)"
-                />
-                <Line 
-                  yAxisId="wind"
-                  type="monotone" 
-                  dataKey="windSpeed" 
-                  stroke="hsl(120, 60%, 45%)" 
-                  strokeWidth={2}
-                  name="Wind Speed (km/h)"
-                  dot={{ fill: "hsl(120, 60%, 45%)", strokeWidth: 2, r: 3 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {hourlyChartData.length > 0 ? (
+              <>
+                <div className="mb-4 text-sm text-muted-foreground">
+                  Data points: {hourlyChartData.length} | 
+                  Precipitation range: {Math.min(...hourlyChartData.map(d => d.precipitation))}-{Math.max(...hourlyChartData.map(d => d.precipitation))}mm | 
+                  Wind range: {Math.min(...hourlyChartData.map(d => d.windSpeed))}-{Math.max(...hourlyChartData.map(d => d.windSpeed))}km/h
+                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={hourlyChartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis 
+                      dataKey="time" 
+                      tick={{ fontSize: 12 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis 
+                      yAxisId="precipitation" 
+                      orientation="left" 
+                      tick={{ fontSize: 12 }}
+                      label={{ value: 'Precipitation (mm)', angle: -90, position: 'insideLeft' }}
+                      domain={[0, 'dataMax + 1']}
+                    />
+                    <YAxis 
+                      yAxisId="wind" 
+                      orientation="right" 
+                      tick={{ fontSize: 12 }}
+                      label={{ value: 'Wind Speed (km/h)', angle: 90, position: 'insideRight' }}
+                      domain={[0, 'dataMax + 5']}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Area 
+                      yAxisId="precipitation"
+                      type="monotone" 
+                      dataKey="precipitation" 
+                      stroke="hsl(210, 100%, 70%)" 
+                      fill="hsl(210, 100%, 85%)"
+                      fillOpacity={0.6}
+                      name="Precipitation (mm)"
+                      strokeWidth={2}
+                    />
+                    <Line 
+                      yAxisId="wind"
+                      type="monotone" 
+                      dataKey="windSpeed" 
+                      stroke="hsl(120, 60%, 45%)" 
+                      strokeWidth={3}
+                      name="Wind Speed (km/h)"
+                      dot={{ fill: "hsl(120, 60%, 45%)", strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: "hsl(120, 60%, 45%)", strokeWidth: 2 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="text-center">
+                  <CloudRain className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No hourly weather data available</p>
+                  <p className="text-xs mt-2">Check if weather data is loaded</p>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
