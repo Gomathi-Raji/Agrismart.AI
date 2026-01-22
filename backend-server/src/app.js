@@ -27,7 +27,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+        origin: process.env.NODE_ENV === 'production' 
+            ? (process.env.FRONTEND_URL || 'http://localhost:5173')
+            : true, // Allow all origins in development
         credentials: true
     }
 });
@@ -43,7 +45,9 @@ logger.info({
 
 // CORS configuration
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Vite default port
+    origin: process.env.NODE_ENV === 'production' 
+        ? (process.env.FRONTEND_URL || 'http://localhost:5173')
+        : true, // Allow all origins in development
     credentials: true,
     optionsSuccessStatus: 200
 };

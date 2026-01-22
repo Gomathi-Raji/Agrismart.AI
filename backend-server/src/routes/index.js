@@ -16,6 +16,7 @@ const paymentRoutes = require('./payments');
 const webhookRoutes = require('./webhooks');
 const voiceAlertsRoutes = require('./voice-alerts');
 const detectionRoutes = require('./detection');
+const blockchainRoutes = require('./blockchain');
 
 const router = express.Router();
 
@@ -49,5 +50,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/webhooks', webhookRoutes);
+router.use('/blockchain', blockchainRoutes);
 
 module.exports = router;

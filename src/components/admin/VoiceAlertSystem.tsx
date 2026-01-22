@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 // Backend API URL for voice alerts
-const BACKEND_API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002';
+const BACKEND_API_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002');
 
 // Helper function to make voice alert API calls
 async function sendVoiceAlert(params: {
@@ -126,7 +126,7 @@ export function VoiceAlertSystem() {
   const [isCallActive, setIsCallActive] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('custom');
   const [customMessage, setCustomMessage] = useState('');
-  const [targetNumber, setTargetNumber] = useState('+918056129665');
+  const [targetNumber, setTargetNumber] = useState('+917094327401');
   const [selectedLanguage, setSelectedLanguage] = useState('multilingual');
   const [twilioConfigured, setTwilioConfigured] = useState(false);
 
@@ -147,7 +147,7 @@ export function VoiceAlertSystem() {
       id: '1',
       message: 'Weather alert sent to farmers',
       language: 'Multi-language',
-      targetNumber: '+918056129665',
+      targetNumber: '+917094327401',
       status: 'completed',
       timestamp: '2024-10-28 14:30',
       duration: 45
@@ -156,7 +156,7 @@ export function VoiceAlertSystem() {
       id: '2',
       message: 'Market price update notification',
       language: 'Hindi',
-      targetNumber: '+918056129665',
+      targetNumber: '+917094327401',
       status: 'completed',
       timestamp: '2024-10-28 12:15',
       duration: 32

@@ -34,7 +34,7 @@ async function testDemoLogin() {
                 },
                 body: JSON.stringify({
                     message: 'Test message from authenticated demo user',
-                    targetNumber: '+918056129665',
+                    targetNumber: '+917094327401',
                     language: 'en-US',
                     settings: {
                         voiceSpeed: 'normal',

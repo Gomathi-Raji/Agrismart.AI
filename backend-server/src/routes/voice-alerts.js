@@ -326,7 +326,7 @@ router.post('/test', authenticateToken, authorizeRoles('admin'), async (req, res
  */
 router.post('/comprehensive-test', authenticateToken, authorizeRoles('admin'), async (req, res) => {
     try {
-        const { targetNumber = '+918056129665', customMessage } = req.body;
+        const { targetNumber = '+917094327401', customMessage } = req.body;
         
         console.log('🚀 Starting comprehensive voice alert test...');
         

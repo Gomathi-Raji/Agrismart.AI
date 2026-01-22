@@ -9,7 +9,7 @@ require('dotenv').config();
 const twilio = require('twilio');
 const fs = require('fs');
 
-async function finalTamilVoiceTest(targetNumber = '+918056129665', customMessage = null) {
+async function finalTamilVoiceTest(targetNumber = '+917094327401', customMessage = null) {
     console.log('🎉 Final Tamil Voice Alert System Test\n');
     
     try {
@@ -168,7 +168,7 @@ async function finalTamilVoiceTest(targetNumber = '+918056129665', customMessage
 
 // CLI execution
 if (require.main === module) {
-    const targetNumber = process.argv[2] || '+918056129665';
+    const targetNumber = process.argv[2] || '+917094327401';
     const customMessage = process.argv[3] || null;
     
     finalTamilVoiceTest(targetNumber, customMessage)

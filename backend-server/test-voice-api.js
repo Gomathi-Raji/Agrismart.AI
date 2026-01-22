@@ -11,7 +11,7 @@ async function testVoiceAPI() {
             },
             body: JSON.stringify({
                 message: 'This is a test message from the API test',
-                targetNumber: '+918056129665',
+                targetNumber: '+917094327401',
                 language: 'en-US',
                 settings: {
                     voiceSpeed: 'normal',

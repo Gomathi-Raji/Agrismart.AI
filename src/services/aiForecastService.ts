@@ -287,7 +287,7 @@ export async function fetchPriceForecast(options: ForecastOptions): Promise<Pric
     if (options.market) params.append('market', options.market);
     if (options.state) params.append('state', options.state);
 
-    const response = await fetch(`http://localhost:3002/api/market/forecast?${params.toString()}`);
+    const response = await fetch(`/api/market/forecast?${params.toString()}`);
 
     if (!response.ok) {
       throw new Error(`Forecast API error: ${response.statusText}`);

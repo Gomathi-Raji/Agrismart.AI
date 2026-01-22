@@ -629,7 +629,7 @@ export default function Admin() {
                     Twilio credentials configured. Voice alert system is ready to use.
                   </p>
                   <div className="mt-2 text-xs bg-green-100 dark:bg-green-900/40 p-2 rounded border">
-                    <strong>Verified Number:</strong> +918056129665<br/>
+                    <strong>Verified Number:</strong> +917094327401<br/>
                     <strong>Twilio Number:</strong> +19789046196<br/>
                     <strong>Features:</strong> Tamil, Hindi, English voice alerts
                   </div>
